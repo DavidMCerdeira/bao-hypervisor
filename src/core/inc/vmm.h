@@ -42,6 +42,8 @@ void vmm_arch_init();
 void add_vm_public(struct vm_public_node *vm_public);
 
 ipc_info_t* find_ipc_obj_in_list(ipc_obj_t *ipc_obj);
+void ipc_list_lock();
+void ipc_list_unlock();
 ipc_info_t* create_ipc_node();
 
 

@@ -176,7 +176,7 @@ ipc_info_t* find_ipc_obj_in_list(ipc_obj_t *ipc_obj) {
 
     list_foreach(ipc_obj_list, struct ipc_info, it){
         if(it->ipc_obj.shmem == ipc_obj->shmem){
-            spin_unlock(&ipc_list_lock);
+            spin_unlock(&ipc_list_spinlock);
             return it;
         }
     }

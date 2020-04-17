@@ -72,7 +72,6 @@ _reset_handler:
 	 *		x1 -> contains image base load address
 	 *		x2 -> contains config binary load address (passed in x0) 
 	 */
-
 	mov x2, x0
 	mrs  x0, MPIDR_EL1
 	adrp x1, _image_start
@@ -343,6 +342,7 @@ setup_cpu:
 	dsb	nsh
 	isb
 	
+        b .
 	br  x5
 
 _enter_vas:

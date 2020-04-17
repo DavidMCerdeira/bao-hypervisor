@@ -24,8 +24,7 @@ VM_IMAGE(vm1, /path/to/vm1/binary.bin);
 VM_IMAGE(vm2, /path/to/vm2/binary.bin);
 
 shmem_t shmem = {
-    .base = 0x90000000,
-    .size = 0x90000000,
+    .ppages = {.size = 0x00006000},
 };
 
 /**
