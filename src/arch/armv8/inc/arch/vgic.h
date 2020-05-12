@@ -13,8 +13,8 @@
  *
  */
 
-#ifndef __VGICV2_H__
-#define __VGICV2_H__
+#ifndef __VGIC_H__
+#define __VGIC_H__
 
 #include <bao.h>
 #include <arch/gic.h>
@@ -62,4 +62,4 @@ void vgic_cpu_init(vcpu_t *vcpu);
 void vgic_set_hw(vm_t *vm, uint64_t id);
 void vgicd_inject(vgicd_t *vgicd, uint64_t id, uint64_t source);
 
-#endif /* __VGICV2_H__ */
+#endif /* __VGIC_H__ */

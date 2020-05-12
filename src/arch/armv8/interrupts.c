@@ -26,23 +26,9 @@
 
 void interrupts_arch_init()
 {
-    if (cpu.id == CPU_MASTER) {
-        mem_map_dev(&cpu.as, (void *)&gicc, platform.arch.gic.gicc_addr,
-                    NUM_PAGES(sizeof(gicc)));
-        mem_map_dev(&cpu.as, (void *)&gich, platform.arch.gic.gich_addr,
-                    NUM_PAGES(sizeof(gich)));
-        mem_map_dev(&cpu.as, (void *)&gicd, platform.arch.gic.gicd_addr,
-                    NUM_PAGES(sizeof(gicd)));
-    }
-
-    /* Wait for core 0 to map interupt controller */
-    cpu_sync_barrier(&cpu_glb_sync);
-
-    if (cpu.id == CPU_MASTER) gic_init();
-
-    gic_cpu_init();
-
+    gic_init();
     interrupts_cpu_enable(platform.arch.gic.maintenance_id, true);
+
 }
 
 void interrupts_arch_ipi_send(uint64_t target_cpu, uint64_t ipi_id)
@@ -62,7 +48,7 @@ void interrupts_arch_enable(uint64_t int_id, bool en)
 {
     gicd_set_enable(int_id, en);
     gicd_set_prio(int_id, 0x7F);
-    gicd_set_trgt(int_id, 1 << cpu.id);
+    gicd_set_route(int_id, cpu.id);
 }
 
 bool interrupts_arch_check(uint64_t int_id)

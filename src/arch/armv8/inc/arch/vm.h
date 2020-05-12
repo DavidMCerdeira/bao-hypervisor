@@ -17,7 +17,7 @@
 #define __ARCH_VM_H__
 
 #include <bao.h>
-#include <arch/vgicv2.h>
+#include <arch/vgic.h>
 #include <arch/psci.h>
 
 typedef struct {

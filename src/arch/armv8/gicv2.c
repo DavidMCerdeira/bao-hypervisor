@@ -107,11 +107,15 @@ void gic_cpu_init()
     gicc_init();
 }
 
-void gic_maintenance_handler(uint64_t arg, uint64_t source);
+void gicd_init(){
 
-void gic_init()
-{
-    NUM_LRS = gich_num_lrs();
+    mem_map_dev(&cpu.as, (void *)&gicc, platform.arch.gic.gicc_addr,
+                NUM_PAGES(sizeof(gicc)));
+    mem_map_dev(&cpu.as, (void *)&gich, platform.arch.gic.gich_addr,
+                NUM_PAGES(sizeof(gich)));
+    mem_map_dev(&cpu.as, (void *)&gicd, platform.arch.gic.gicd_addr,
+                NUM_PAGES(sizeof(gicd)));
+
     size_t int_num = gic_num_irqs();
 
     /* Bring distributor to known state */
@@ -138,10 +142,28 @@ void gic_init()
     /* No need to setup gicd.NSACR as all interrupts are  setup to group 1 */
 
     interrupts_reserve(platform.arch.gic.maintenance_id,
-                       gic_maintenance_handler);
+                    gic_maintenance_handler);
 
     /* Enable distributor */
     gicd.CTLR |= GICD_CTLR_EN_BIT;
+}
+
+void gic_init()
+{
+    if(cpu.id == CPU_MASTER){
+        gicd_init();
+    }
+
+    /* Wait for core 0 to map interupt controller */
+    cpu_sync_barrier(&cpu_glb_sync);
+
+    gic_cpu_init();
+
+    if(cpu.id == CPU_MASTER){
+        NUM_LRS = gich_num_lrs();
+    }
+    
+    cpu_sync_barrier(&cpu_glb_sync);
 }
 
 void gic_handle()
@@ -282,6 +304,11 @@ void gicd_set_trgt(uint64_t int_id, uint8_t trgt)
         (gicd.ITARGETSR[reg_ind] & ~mask) | ((trgt << off) & mask);
 
     spin_unlock(&gicd_lock);
+}
+
+void gicd_set_route(uint64_t int_id, uint8_t trgt)
+{
+    gicd_set_trgt(int_id, trgt);
 }
 
 void gicd_set_enable(uint64_t int_id, bool en)

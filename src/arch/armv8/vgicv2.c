@@ -13,7 +13,7 @@
  *
  */
 
-#include <arch/vgicv2.h>
+#include <arch/vgic.h>
 
 #include <bit.h>
 #include <spinlock.h>
