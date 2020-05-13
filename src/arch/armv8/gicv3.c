@@ -37,6 +37,30 @@ static inline uint64_t gich_num_lrs()
     return ((MRS(ICH_VTR_EL2) & GICH_VTR_MSK) >> GICH_VTR_OFF) + 1;
 }
 
+static inline uint32_t gich_read_lr(size_t i){
+
+    uint32_t val = 0;
+
+    switch(i) {
+        case 0:  val = MRS(FICH_LR0_EL2); break;
+        case 1:  val = MRS(FICH_LR1_EL2); break;
+        case 2:  val = MRS(FICH_LR2_EL2); break;
+        case 3:  val = MRS(FICH_LR3_EL2); break;
+        case 4:  val = MRS(FICH_LR4_EL2); break;
+        case 5:  val = MRS(FICH_LR5_EL2); break;
+        case 6:  val = MRS(FICH_LR6_EL2); break;
+        case 7:  val = MRS(FICH_LR7_EL2); break;
+        case 8:  val = MRS(FICH_LR8_EL2); break;
+        case 9:  val = MRS(FICH_LR9_EL2); break;
+        case 10: val = MRS(FICH_LR10_EL2); break;
+        case 11: val = MRS(FICH_LR11_EL2); break;
+        case 12: val = MRS(FICH_LR12_EL2); break;
+        case 13: val = MRS(FICH_LR13_EL2); break;
+        case 14: val = MRS(FICH_LR14_EL2); break;
+        case 15: val = MRS(FICH_LR15_EL2); break;
+    }
+}
+
 static inline void gich_write_lr(size_t i, uint32_t val){
 
     switch(i) {
@@ -60,7 +84,7 @@ static inline void gich_write_lr(size_t i, uint32_t val){
 }
 
 static inline void gicc_init()
-{   
+{
     /* Enable system register interface i*/
     MSR(ICC_SRE_EL2, ICC_SRE_SRE_BIT);
     ISB();
@@ -77,7 +101,7 @@ static inline void gicc_init()
 
 static inline void gicr_init()
 {
-    mem_map_dev(&cpu.as, (void *)&gicr, 
+    mem_map_dev(&cpu.as, (void *)&gicr,
                 platform.arch.gic.gicr_addr + (cpu.id * sizeof(gicr)),
                 NUM_PAGES(sizeof(gicr)));
 
@@ -185,7 +209,7 @@ void gic_init()
         gicd_init();
         NUM_LRS = gich_num_lrs();
     }
-    
+
     cpu_sync_barrier(&cpu_glb_sync);
 }
 
@@ -225,14 +249,14 @@ uint64_t gicd_get_prio(uint64_t int_id)
 }
 
 void gicd_set_icfgr(uint64_t int_id, uint8_t cfg)
-{   
+{
     // spin_lock(&gicd_lock);
 
     // uint64_t reg_ind = (int_id*GIC_CONFIG_BITS)/(sizeof(uint32_t)*8);
     // uint64_t off = (int_id*GIC_CONFIG_BITS)%(sizeof(uint32_t)*8);
     // uint64_t mask = ((1U << GIC_CONFIG_BITS) - 1) << off;
 
-    // gicd.ICFGR[reg_ind] = 
+    // gicd.ICFGR[reg_ind] =
     //     (gicd.ICFGR[reg_ind] & ~mask) | ((cfg << off) & mask);
 
     // spin_unlock(&gicd_lock);
@@ -342,5 +366,5 @@ void gicd_set_enable(uint64_t int_id, bool en)
         else gicd.ICENABLER[reg_ind] = bit;
         spin_unlock(&gicd_lock);
     }
-    
+
 }

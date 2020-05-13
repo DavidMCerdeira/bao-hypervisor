@@ -21,11 +21,21 @@
 #include <interrupts.h>
 #include <vm.h>
 
+extern volatile gicr_t gicr;
+extern volatile gicd_t gicd;
+
 #define GICD_IS_REG(REG, offset)            \
     (((offset) >= offsetof(gicd_t, REG)) && \
      (offset) < (offsetof(gicd_t, REG) + sizeof(gicd.REG)))
 #define GICD_REG_GROUP(REG) ((offsetof(gicd_t, REG) & 0xf80) >> 7)
 #define GICD_REG_IND(REG) (offsetof(gicd_t, REG) & 0x7f)
+
+#define GICR_IS_REG(REG, offset)            \
+    (((offset) >= offsetof(gicr_t, REG)) && \
+     (offset) < (offsetof(gicr_t, REG) + sizeof(gicr.REG)))
+#define GICR_REG_GROUP(REG) ((offsetof(gicr_t, REG) & 0xf80) >> 7)
+#define GICR_REG_OFF(REG) (offsetof(gicr_t, REG) & 0x1ffff)
+#define GICR_REG_IND(REG) (offsetof(gicr_t, REG) & 0x1f)
 
 #define VGIC_MSG_DATA(VM_ID, INT_ID, VAL) \
     (((VM_ID) << 32) | (((INT_ID)&0x7fff) << 8) | ((VAL)&0xff))
@@ -357,7 +367,7 @@ void vgic_set_hw(vm_t *vm, uint64_t id)
 //                     else
 //                         gich.HCR &= ~GICH_HCR_En_BIT;
 //                     cpu_msg_t msg = {GICV2_IPI_ID, VGICD_GICH_EN,
-//                                      VGIC_MSG_DATA(cpu.vcpu->vm->id, 
+//                                      VGIC_MSG_DATA(cpu.vcpu->vm->id,
 //                                      0, enable)};
 //                     vm_msg_broadcast(cpu.vcpu->vm, &msg);
 //                 }
@@ -938,6 +948,502 @@ void vgicd_inject(vgicd_t *vgicd, uint64_t id, uint64_t source)
     //     vgicd_set_pend(cpu.vcpu, id, true);
     // }
 }
+//void vgicd_emul_sgiregs_access(emul_access_t *acc)
+
+void vgicr_emul_ctlr_access(emul_access_t *acc)
+{
+    // TODO
+}
+
+void vgicr_emul_iidr_access(emul_access_t *acc)
+{
+    // TODO
+}
+
+void vgicr_emul_typer_access(emul_access_t *acc)
+{
+    // TODO
+}
+
+void vgicr_emul_statusr_access(emul_access_t *acc)
+{
+    // TODO
+}
+
+void vgicr_emul_setlpir_access(emul_access_t *acc)
+{
+    // TODO
+}
+
+void vgicr_emul_propbaser_access(emul_access_t *acc)
+{
+    // TODO
+}
+
+void vgicr_emul_pendbaser_access(emul_access_t *acc)
+{
+    // TODO
+}
+
+void vgicr_emul_invlpir_access(emul_access_t *acc)
+{
+    // TODO
+}
+
+void vgicr_emul_invallr_access(emul_access_t *acc)
+{
+    // TODO
+}
+
+void vgicr_emul_syncr_access(emul_access_t *acc)
+{
+    // TODO
+}
+
+/* SGI related */
+
+void vgicr_set_igroupr0(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
+{
+    // TODO
+}
+
+uint32_t vgicr_get_igroupr0(vcpu_t *vcpu, uint32_t int_id)
+{
+    // TODO
+    return 0;
+}
+
+void vgicr_emul_igroupr0_access(emul_access_t *acc)
+{
+    // TODO
+    uint32_t cfg;
+    if (acc->write){
+        cfg = vcpu_readreg(cpu.vcpu, acc->reg);
+        for (int irq = 0; irq < 32; irq++) {
+            vgicr_set_igroupr0(cpu.vcpu, irq, (cfg & (0b1 << irq)) >> irq);
+        }
+    } else {
+        cfg = 0;
+        for (int irq = 0; irq < 32; irq++) {
+            cfg |= vgicr_get_igroupr0(cpu.vcpu, irq) << irq;
+        }
+        vcpu_writereg(cpu.vcpu, acc->reg, cfg);
+    }
+}
+
+void vgicr_set_isenabler0(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
+{
+    // TODO
+}
+
+uint32_t vgicr_get_isenabler0(vcpu_t *vcpu, uint32_t int_id)
+{
+    // TODO
+    return 0;
+}
+
+void vgicr_emul_isenabler0_access(emul_access_t *acc)
+{
+    // TODO
+    uint32_t cfg;
+    if(acc->write) {
+        cfg = vcpu_readreg(cpu.vcpu, acc->reg);
+        for (int irq = 0; irq < 32; irq++) {
+            vgicr_set_isenabler0(cpu.vcpu, irq, (cfg & (0b1 << irq)) >> irq);
+        }
+    }else{
+        cfg = 0;
+        for (int irq = 0; irq < 32; irq++){
+            cfg |= vgicr_get_isenabler0(cpu.vcpu, irq) << irq;
+        }
+        vcpu_writereg(cpu.vcpu, acc->reg, cfg);
+    }
+}
+
+void vgicr_set_icenabler0(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
+{
+    // TODO
+}
+
+uint32_t vgicr_get_icenabler0(vcpu_t *vcpu, uint32_t int_id)
+{
+    // TODO
+    return 0;
+}
+
+void vgicr_emul_icenabler0_access(emul_access_t *acc)
+{
+    // TODO
+    uint32_t cfg;
+    if(acc->write) {
+        cfg = vcpu_readreg(cpu.vcpu, acc->reg);
+        for (int irq = 0; irq < 32; irq++) {
+            vgicr_set_icenabler0(cpu.vcpu, irq, (cfg & (0b1 << irq)) >> irq);
+        }
+    }else{
+        cfg = 0;
+        for (int irq = 0; irq < 32; irq++){
+            cfg |= vgicr_get_icenabler0(cpu.vcpu, irq) << irq;
+        }
+        vcpu_writereg(cpu.vcpu, acc->reg, cfg);
+    }
+}
+
+void vgicr_set_ispendr0(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
+{
+    // TODO
+}
+
+uint32_t vgicr_get_ispendr0(vcpu_t *vcpu, uint32_t int_id)
+{
+    // TODO
+    return 0;
+}
+
+void vgicr_emul_ispendr0_access(emul_access_t *acc)
+{
+    // TODO
+    uint32_t cfg;
+    if(acc->write) {
+        cfg = vcpu_readreg(cpu.vcpu, acc->reg);
+        for (int irq = 0; irq < 32; irq++) {
+            vgicr_set_ispendr0(cpu.vcpu, irq, (cfg & (0b1 << irq)) >> irq);
+        }
+    }else{
+        cfg = 0;
+        for (int irq = 0; irq < 32; irq++){
+            cfg |= vgicr_get_ispendr0(cpu.vcpu, irq) << irq;
+        }
+        vcpu_writereg(cpu.vcpu, acc->reg, cfg);
+    }
+}
+
+void vgicr_set_isactiver0(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
+{
+    // TODO
+}
+
+uint32_t vgicr_get_isactiver0(vcpu_t *vcpu, uint32_t int_id)
+{
+    // TODO
+    return 0;
+}
+
+void vgicr_emul_isactiver0_access(emul_access_t *acc)
+{
+    // TODO
+    uint32_t cfg;
+    if(acc->write) {
+        cfg = vcpu_readreg(cpu.vcpu, acc->reg);
+        for (int irq = 0; irq < 32; irq++) {
+            vgicr_set_isactiver0(cpu.vcpu, irq, (cfg & (0b1 << irq)) >> irq);
+        }
+    }else{
+        cfg = 0;
+        for (int irq = 0; irq < 32; irq++){
+            cfg |= vgicr_get_isactiver0(cpu.vcpu, irq) << irq;
+        }
+        vcpu_writereg(cpu.vcpu, acc->reg, cfg);
+    }
+}
+
+void vgicr_set_icactiver0(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
+{
+    // TODO
+}
+
+uint32_t vgicr_get_icactiver0(vcpu_t *vcpu, uint32_t int_id)
+{
+    // TODO
+    return 0;
+}
+
+void vgicr_emul_icactiver0_access(emul_access_t *acc)
+{
+    // TODO
+    uint32_t cfg;
+    if(acc->write) {
+        cfg = vcpu_readreg(cpu.vcpu, acc->reg);
+        for (int irq = 0; irq < 32; irq++) {
+            vgicr_set_icactiver0(cpu.vcpu, irq, (cfg & (0b1 << irq)) >> irq);
+        }
+    }else{
+        cfg = 0;
+        for (int irq = 0; irq < 32; irq++){
+            cfg |= vgicr_get_icactiver0(cpu.vcpu, irq) << irq;
+        }
+        vcpu_writereg(cpu.vcpu, acc->reg, cfg);
+    }
+}
+
+void vgicr_set_ipriorityr(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
+{
+    // TODO
+}
+
+uint32_t vgicr_get_ipriorityr(vcpu_t *vcpu, uint32_t int_id)
+{
+    // TODO
+    return 0;
+}
+
+void vgicr_emul_ipriorityr_access(emul_access_t *acc)
+{
+    // TODO
+    uint32_t cfg;
+    if(acc->write) {
+        cfg = vcpu_readreg(cpu.vcpu, acc->reg);
+        for (int irq = 0; irq < 32; irq++) {
+            vgicr_set_ipriorityr(cpu.vcpu, irq, (cfg & (0b1 << irq)) >> irq);
+        }
+    }else{
+        cfg = 0;
+        for (int irq = 0; irq < 32; irq++){
+            cfg |= vgicr_get_ipriorityr(cpu.vcpu, irq) << irq;
+        }
+        vcpu_writereg(cpu.vcpu, acc->reg, cfg);
+    }
+}
+
+void vgicr_set_icfgr0(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
+{
+    // TODO
+}
+
+uint32_t vgicr_get_icfgr0(vcpu_t *vcpu, uint32_t int_id)
+{
+    // TODO
+    return 0;
+}
+
+void vgicr_emul_icfgr0_access(emul_access_t *acc)
+{
+    // TODO
+
+    uint32_t cfg;
+    if(acc->write) {
+        cfg = vcpu_readreg(cpu.vcpu, acc->reg);
+        for (int irq = 0, bit = 0; irq <= 15; bit += 2, irq++) {
+            vgicr_set_icfgr0(cpu.vcpu, irq, (cfg & (0b11 << bit)) >> bit);
+        }
+    }else{
+        cfg = 0;
+        for (int irq = 0, bit = 0; irq <= 15; bit += 2, irq++) {
+            cfg |= vgicr_get_icfgr0(cpu.vcpu, irq) << bit;
+        }
+        vcpu_writereg(cpu.vcpu, acc->reg, cfg);
+    }
+}
+
+
+void vgicr_set_icfgr1(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
+{
+    // TODO
+}
+
+uint32_t vgicr_get_icfgr1(vcpu_t *vcpu, uint32_t int_id)
+{
+    // TODO
+    return 0;
+}
+
+void vgicr_emul_icfgr1_access(emul_access_t *acc)
+{
+    // TODO
+
+    uint32_t cfg;
+    if(acc->write) {
+        cfg = vcpu_readreg(cpu.vcpu, acc->reg);
+        for (int irq = 0, bit = 0; irq <= 15; bit += 2, irq++) {
+            vgicr_set_icfgr1(cpu.vcpu, irq, (cfg & (0b11 << irq)) >> irq);
+        }
+    }else{
+        cfg = 0;
+        for (int irq = 0, bit = 0; irq <= 15; bit += 2, irq++) {
+            cfg |= vgicr_get_icfgr1(cpu.vcpu, irq) << bit;
+        }
+        vcpu_writereg(cpu.vcpu, acc->reg, cfg);
+    }
+}
+
+void vgicr_set_igrpmodr0(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
+{
+    // TODO
+}
+
+uint32_t vgicr_get_igrpmodr0(vcpu_t *vcpu, uint32_t int_id)
+{
+    // TODO
+    return 0;
+}
+
+void vgicr_emul_igrpmodr0_access(emul_access_t *acc)
+{
+    // TODO
+
+    uint32_t cfg;
+    if(acc->write) {
+        cfg = vcpu_readreg(cpu.vcpu, acc->reg);
+        for (int irq = 0; irq < 32; irq++) {
+            vgicr_set_igrpmodr0(cpu.vcpu, irq, (cfg & (0b1 << irq)) >> irq);
+        }
+    }else{
+        cfg = 0;
+        for (int irq = 0; irq < 32; irq++){
+            cfg |= vgicr_get_igrpmodr0(cpu.vcpu, irq) << irq;
+        }
+        vcpu_writereg(cpu.vcpu, acc->reg, cfg);
+    }
+}
+
+void vgicr_set_nsacr(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
+{
+    // TODO
+}
+
+uint32_t vgicr_get_nsacr(vcpu_t *vcpu, uint32_t int_id)
+{
+    // TODO
+    return 0;
+}
+
+void vgicr_emul_nsacr_access(emul_access_t *acc)
+{
+    // TODO
+
+    uint32_t cfg;
+    if(acc->write) {
+        cfg = vcpu_readreg(cpu.vcpu, acc->reg);
+        for (int irq = 0, bit = 0; irq <= 15; bit += 2, irq++) {
+            vgicr_set_nsacr(cpu.vcpu, irq, (cfg & (0b11 << bit)) >> bit);
+        }
+    }else{
+        cfg = 0;
+        for (int irq = 0, bit = 0; irq <= 15; bit += 2, irq++) {
+            cfg |= vgicr_get_nsacr(cpu.vcpu, irq) << bit;
+        }
+        vcpu_writereg(cpu.vcpu, acc->reg, cfg);
+    }
+}
+
+bool vgicr_emul_handler(emul_access_t *acc)
+{
+//     if (acc->width > 4) return false;
+
+//    uint32_t acc_offset = acc->addr & 0xffff;
+
+//     switch ((acc->addr & 0xf80) >> 7) {
+//         case GICD_REG_GROUP(CTLR):
+//         case GICD_REG_GROUP(ISENABLER):
+//         case GICD_REG_GROUP(ISPENDR):
+//         case GICD_REG_GROUP(ISACTIVER):
+//         case GICD_REG_GROUP(ICENABLER):
+//         case GICD_REG_GROUP(ICPENDR):
+//         case GICD_REG_GROUP(ICACTIVER):
+//         case GICD_REG_GROUP(ICFGR):
+//             /* Only allow aligned 32-bit accesses or byte */
+//             if (acc->width != 4 || acc->addr & 0x3) {
+//                 return false;
+//             }
+//             break;
+
+//         case GICD_REG_GROUP(SGIR):
+//             /* Allow byte access or align 16-bit accesses */
+//             if ((acc->width == 4 && (acc->addr & 0x3)) ||
+//                 (acc->width == 2 && (acc->addr & 0x1))) {
+//                 return false;
+//             }
+//             break;
+
+//         default:
+//             if (GICD_IS_REG(IPRIORITYR, acc_offset) ||
+//                 GICD_IS_REG(ITARGETSR, acc_offset)) {
+//                 /* Allow byte access or align 16-bit accesses */
+//                 if ((acc->width == 4 && (acc->addr & 0x3)) ||
+//                     (acc->width == 2 && (acc->addr & 0x1))) {
+//                     return false;
+//                 }
+//             }
+//     }
+
+    // spin_lock(&cpu.vcpu->vm->arch.vgicd.lock);
+    /* LPI Related */
+    if(!(acc->addr & 0x10000)){
+        switch ((acc->addr & 0x1ffff)) {
+            case GICR_REG_OFF(CTLR):
+                vgicr_emul_ctlr_access(acc);
+                break;
+            case GICR_REG_OFF(IIDR):
+                vgicr_emul_iidr_access(acc);
+                break;
+            case GICR_REG_OFF(TYPER):
+                vgicr_emul_typer_access(acc);
+                break;
+            case GICR_REG_OFF(STATUSR):
+                vgicr_emul_statusr_access(acc);
+                break;
+            case GICR_REG_OFF(SETLPIR):
+                vgicr_emul_setlpir_access(acc);
+                break;
+            case GICR_REG_OFF(PROPBASER):
+                vgicr_emul_propbaser_access(acc);
+                break;
+            case GICR_REG_OFF(PENDBASER):
+                vgicr_emul_pendbaser_access(acc);
+                break;
+            case GICR_REG_OFF(INVLPIR):
+                vgicr_emul_invlpir_access(acc);
+                break;
+            case GICR_REG_OFF(INVALLR):
+                vgicr_emul_invallr_access(acc);
+                break;
+            case GICR_REG_OFF(SYNCR):
+                vgicr_emul_syncr_access(acc);
+                break;
+        }
+    } else {
+        /* SGI related */
+        switch ((acc->addr & 0xf80) >> 7) {
+            case GICR_REG_GROUP(IGROUPR0):
+                vgicr_emul_igroupr0_access(acc);
+                break;
+            case GICR_REG_GROUP(ISENABLER0):
+                vgicr_emul_isenabler0_access(acc);
+                break;
+            case GICR_REG_GROUP(ICENABLER0):
+                vgicr_emul_icenabler0_access(acc);
+                break;
+            case GICR_REG_GROUP(ISPENDR0):
+                vgicr_emul_ispendr0_access(acc);
+                break;
+            case GICR_REG_GROUP(ISACTIVER0):
+                vgicr_emul_isactiver0_access(acc);
+                break;
+            case GICR_REG_GROUP(ICACTIVER0):
+                vgicr_emul_icactiver0_access(acc);
+                break;
+            case GICR_REG_GROUP(IPRIORITYR):
+                vgicr_emul_ipriorityr_access(acc);
+                break;
+            case GICR_REG_GROUP(ICFGR0):
+                /* ICFGR0 and ICFGR1 fall on the same group */
+                if(acc->addr & 0x4)
+                    vgicr_emul_icfgr1_access(acc);
+                else
+                    vgicr_emul_icfgr0_access(acc);
+                break;
+            case GICR_REG_GROUP(IGRPMODR0):
+                vgicr_emul_igrpmodr0_access(acc);
+                break;
+            case GICR_REG_GROUP(NSACR):
+                vgicr_emul_nsacr_access(acc);
+                break;
+        }
+    }
+    // spin_unlock(&cpu.vcpu->vm->arch.vgicd.lock);
+
+    return true;
+}
 
 // void gicv2_ipi_handler(uint32_t event, uint64_t data)
 // {
@@ -1154,12 +1660,17 @@ void vgic_init(vm_t *vm, const struct gic_dscrp *gic_dscrp)
         vm->arch.vgicd.interrupts[i].lock = 0;
     }
 
-    emul_region_t emu = {.va_base = gic_dscrp->gicd_addr,
+    emul_region_t gicd_emu = {.va_base = gic_dscrp->gicd_addr,
                          .pa_base = (uint64_t)&gicd,
                          .size = ALIGN(sizeof(gicd_t), PAGE_SIZE),
                          .handler = vgicd_emul_handler};
+    vm_add_emul(vm, &gicd_emu);
 
-    vm_add_emul(vm, &emu);
+    emul_region_t gicr_emu = {.va_base = gic_dscrp->gicr_addr,
+                         .pa_base = (uint64_t)&gicr,
+                         .size = ALIGN(sizeof(gicr_t), PAGE_SIZE),
+                         .handler = vgicr_emul_handler};
+    vm_add_emul(vm, &gicr_emu);
 }
 
 void vgic_cpu_init(vcpu_t *vcpu)
