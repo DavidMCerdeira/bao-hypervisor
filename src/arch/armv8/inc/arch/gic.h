@@ -140,6 +140,7 @@ typedef struct {
 
 /* Redistributor Wake Register, GICD_WAKER */
 
+#define GICR_CTRL_DS_BIT            (1 << 6)
 #define GICR_ProcessorSleep_BIT     (0x2)
 #define GICR_ChildrenASleep_BIT     (0x4)
 typedef struct {
@@ -147,45 +148,45 @@ typedef struct {
     uint32_t CTLR;
     uint32_t IIDR;
     uint64_t TYPER;
-    uint32_t STATUSR;    
-    uint32_t WAKER; 
-    uint8_t pad0[0x0040-0x0018]; 
+    uint32_t STATUSR;
+    uint32_t WAKER;
+    uint8_t pad0[0x0040-0x0018];
     uint64_t SETLPIR;
     uint64_t CLRLPIR;
-    uint8_t pad1[0x0070-0x0050]; 
+    uint8_t pad1[0x0070-0x0050];
     uint64_t PROPBASER;
     uint64_t PENDBASER;
-    uint8_t pad2[0x00A0-0x0080]; 
+    uint8_t pad2[0x00A0-0x0080];
     uint64_t INVLPIR;
-    uint8_t pad3[0x00B0-0x00A8]; 
+    uint8_t pad3[0x00B0-0x00A8];
     uint64_t INVALLR;
-    uint8_t pad4[0x00c0-0x00b8];    
+    uint8_t pad4[0x00c0-0x00b8];
     uint32_t SYNCR;
 
     /* SGI_base frame */
-    uint8_t sgi_base[0]  __attribute__((aligned(0x10000))); 
+    uint8_t sgi_base[0]  __attribute__((aligned(0x10000)));
     uint8_t pad5[0x0080-0x000];
     uint32_t IGROUPR0;
-    uint8_t pad6[0x0100-0x084]; 
+    uint8_t pad6[0x0100-0x084];
     uint32_t ISENABLER0;
-    uint8_t pad7[0x0180-0x104]; 
+    uint8_t pad7[0x0180-0x104];
     uint32_t ICENABLER0;
-    uint8_t pad8[0x0200-0x184]; 
+    uint8_t pad8[0x0200-0x184];
     uint32_t ISPENDR0;
-    uint8_t pad9[0x0280-0x204]; 
+    uint8_t pad9[0x0280-0x204];
     uint32_t ICPENDR0;
-    uint8_t pad10[0x0300-0x284]; 
+    uint8_t pad10[0x0300-0x284];
     uint32_t ISACTIVER0;
-    uint8_t pad11[0x0380-0x304]; 
+    uint8_t pad11[0x0380-0x304];
     uint32_t ICACTIVER0;
-    uint8_t pad12[0x0400-0x384]; 
+    uint8_t pad12[0x0400-0x384];
     uint32_t IPRIORITYR[GIC_NUM_PRIO_REGS(GIC_CPU_PRIV)];
-    uint8_t pad13[0x0c00-0x420]; 
+    uint8_t pad13[0x0c00-0x420];
     uint32_t ICFGR0;
     uint32_t ICFGR1;
-    uint8_t pad14[0x0D00-0xc08]; 
+    uint8_t pad14[0x0D00-0xc08];
     uint32_t IGRPMODR0;
-    uint8_t pad15[0x0e00-0xd04]; 
+    uint8_t pad15[0x0e00-0xd04];
     uint32_t NSACR;
 } __attribute__((__packed__, aligned(0x10000))) gicr_t;
 
@@ -354,12 +355,16 @@ void gicd_set_route(uint64_t int_id, uint8_t trgt);
 uint64_t gicd_get_prio(uint64_t int_id);
 enum int_state gicd_get_state(uint64_t int_id);
 
+uint32_t gich_read_lr(size_t i);
+void gich_write_lr(size_t i, uint32_t val);
+
 void gic_maintenance_handler(uint64_t arg, uint64_t source);
 
 static inline uint64_t gic_num_irqs()
 {
     uint32_t itlinenumber =
-        bit_extract(gicd.TYPER, GICD_TYPER_ITLN_OFF, GICD_TYPER_ITLN_LEN);
+        bit_extract(gicd.TYPER, GICD_TYPER_ITLN_OFF,
+                GICD_TYPER_ITLN_LEN);
     return 32 * itlinenumber + 1;
 }
 

@@ -25,7 +25,7 @@
 volatile gicd_t gicd __attribute__((section(".devices")));
 volatile gicr_t gicr __attribute__((section(".cpu_private_devices")));
 
-volatile gich_t gich __attribute__((section(".devices"), aligned(PAGE_SIZE))); //TODO REMOVE
+
 
 static spinlock_t gicd_lock;
 
@@ -37,31 +37,32 @@ static inline uint64_t gich_num_lrs()
     return ((MRS(ICH_VTR_EL2) & GICH_VTR_MSK) >> GICH_VTR_OFF) + 1;
 }
 
-static inline uint32_t gich_read_lr(size_t i){
+inline uint32_t gich_read_lr(size_t i){
 
     uint32_t val = 0;
 
     switch(i) {
-        case 0:  val = MRS(FICH_LR0_EL2); break;
-        case 1:  val = MRS(FICH_LR1_EL2); break;
-        case 2:  val = MRS(FICH_LR2_EL2); break;
-        case 3:  val = MRS(FICH_LR3_EL2); break;
-        case 4:  val = MRS(FICH_LR4_EL2); break;
-        case 5:  val = MRS(FICH_LR5_EL2); break;
-        case 6:  val = MRS(FICH_LR6_EL2); break;
-        case 7:  val = MRS(FICH_LR7_EL2); break;
-        case 8:  val = MRS(FICH_LR8_EL2); break;
-        case 9:  val = MRS(FICH_LR9_EL2); break;
-        case 10: val = MRS(FICH_LR10_EL2); break;
-        case 11: val = MRS(FICH_LR11_EL2); break;
-        case 12: val = MRS(FICH_LR12_EL2); break;
-        case 13: val = MRS(FICH_LR13_EL2); break;
-        case 14: val = MRS(FICH_LR14_EL2); break;
-        case 15: val = MRS(FICH_LR15_EL2); break;
+        case 0:  val = MRS(ICH_LR0_EL2); break;
+        case 1:  val = MRS(ICH_LR1_EL2); break;
+        case 2:  val = MRS(ICH_LR2_EL2); break;
+        case 3:  val = MRS(ICH_LR3_EL2); break;
+        case 4:  val = MRS(ICH_LR4_EL2); break;
+        case 5:  val = MRS(ICH_LR5_EL2); break;
+        case 6:  val = MRS(ICH_LR6_EL2); break;
+        case 7:  val = MRS(ICH_LR7_EL2); break;
+        case 8:  val = MRS(ICH_LR8_EL2); break;
+        case 9:  val = MRS(ICH_LR9_EL2); break;
+        case 10: val = MRS(ICH_LR10_EL2); break;
+        case 11: val = MRS(ICH_LR11_EL2); break;
+        case 12: val = MRS(ICH_LR12_EL2); break;
+        case 13: val = MRS(ICH_LR13_EL2); break;
+        case 14: val = MRS(ICH_LR14_EL2); break;
+        case 15: val = MRS(ICH_LR15_EL2); break;
     }
+    return val;
 }
 
-static inline void gich_write_lr(size_t i, uint32_t val){
+inline void gich_write_lr(size_t i, uint32_t val){
 
     switch(i) {
         case 0:  MSR(ICH_LR0_EL2, val); break;
@@ -342,6 +343,20 @@ void gicd_set_state(uint64_t int_id, enum int_state state)
 {
     // gicd_set_act(int_id, state & ACT);
     // gicd_set_pend(int_id, state & PEND);
+}
+
+void gicd_set_trgt(uint64_t int_id, uint8_t trgt)
+{
+    uint64_t reg_ind = GIC_TARGET_REG(int_id);
+    uint64_t off = GIC_TARGET_OFF(int_id);
+    uint32_t mask = BIT_MASK(off, GIC_TARGET_BITS);
+
+    spin_lock(&gicd_lock);
+
+    gicd.ITARGETSR[reg_ind] =
+        (gicd.ITARGETSR[reg_ind] & ~mask) | ((trgt << off) & mask);
+
+    spin_unlock(&gicd_lock);
 }
 
 void gicd_set_route(uint64_t int_id, uint8_t trgt)

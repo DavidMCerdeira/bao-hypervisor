@@ -357,7 +357,7 @@ void vgicd_emul_misc_access(emul_access_t *acc)
                     else
                         gich.HCR &= ~GICH_HCR_En_BIT;
                     cpu_msg_t msg = {GICV2_IPI_ID, VGICD_GICH_EN,
-                                     VGIC_MSG_DATA(cpu.vcpu->vm->id, 
+                                     VGIC_MSG_DATA(cpu.vcpu->vm->id,
                                      0, enable)};
                     vm_msg_broadcast(cpu.vcpu->vm, &msg);
                 }
