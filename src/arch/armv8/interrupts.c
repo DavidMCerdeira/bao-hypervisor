@@ -46,14 +46,14 @@ void interrupts_arch_cpu_enable(bool en)
 
 void interrupts_arch_enable(uint64_t int_id, bool en)
 {
-    gicd_set_enable(int_id, en);
-    gicd_set_prio(int_id, 0x7F);
-    gicd_set_route(int_id, cpu.id);
+    gic_set_enable(int_id, en);
+    gic_set_prio(int_id, 0x7F);
+    gic_set_route(int_id, cpu.id);
 }
 
 bool interrupts_arch_check(uint64_t int_id)
 {
-    return gicd_get_state(int_id) & PEND;
+    return gic_get_state(int_id) & PEND;
 }
 
 inline bool interrupts_arch_conflict(bitmap_t interrupt_bitmap, uint64_t int_id)
@@ -63,7 +63,7 @@ inline bool interrupts_arch_conflict(bitmap_t interrupt_bitmap, uint64_t int_id)
 
 void interrupts_arch_clear(uint64_t int_id)
 {
-    gicd_set_state(int_id, INV);
+    gic_set_state(int_id, INV);
 }
 
 void interrupts_arch_vm_assign(vm_t *vm, uint64_t id)
@@ -73,5 +73,5 @@ void interrupts_arch_vm_assign(vm_t *vm, uint64_t id)
 
 void interrupts_arch_vm_inject(vm_t *vm, uint64_t id, uint64_t source)
 {
-    vgicd_inject(&vm->arch.vgicd, id, source);
+    vgic_inject(&vm->arch.vgicd, id, source);
 }

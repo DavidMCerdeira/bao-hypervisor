@@ -57,6 +57,7 @@ typedef struct {
     vgic_int_t interrupts[GIC_CPU_PRIV];
 } vgic_priv_t;
 
+
 void vgic_init(vm_t *vm, const struct gic_dscrp *gic_dscrp);
 void vgic_cpu_init(vcpu_t *vcpu);
 void vgic_set_hw(vm_t *vm, uint64_t id);

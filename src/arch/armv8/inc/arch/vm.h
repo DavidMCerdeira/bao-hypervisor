@@ -26,7 +26,7 @@ typedef struct {
 
 typedef struct {
     uint64_t vmpidr;
-    vgic_priv_t vgicd_priv;
+    vgic_priv_t vgic_priv;
     psci_ctx_t psci_ctx;
 } vcpu_arch_t;
 

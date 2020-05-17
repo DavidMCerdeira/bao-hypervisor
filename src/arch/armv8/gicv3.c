@@ -25,62 +25,123 @@
 volatile gicd_t gicd __attribute__((section(".devices")));
 volatile gicr_t gicr __attribute__((section(".cpu_private_devices")));
 
-
-
 static spinlock_t gicd_lock;
 
 uint64_t NUM_LRS;
-
 
 static inline uint64_t gich_num_lrs()
 {
     return ((MRS(ICH_VTR_EL2) & GICH_VTR_MSK) >> GICH_VTR_OFF) + 1;
 }
 
-inline uint32_t gich_read_lr(size_t i){
-
+inline uint32_t gich_read_lr(size_t i)
+{
     uint32_t val = 0;
 
-    switch(i) {
-        case 0:  val = MRS(ICH_LR0_EL2); break;
-        case 1:  val = MRS(ICH_LR1_EL2); break;
-        case 2:  val = MRS(ICH_LR2_EL2); break;
-        case 3:  val = MRS(ICH_LR3_EL2); break;
-        case 4:  val = MRS(ICH_LR4_EL2); break;
-        case 5:  val = MRS(ICH_LR5_EL2); break;
-        case 6:  val = MRS(ICH_LR6_EL2); break;
-        case 7:  val = MRS(ICH_LR7_EL2); break;
-        case 8:  val = MRS(ICH_LR8_EL2); break;
-        case 9:  val = MRS(ICH_LR9_EL2); break;
-        case 10: val = MRS(ICH_LR10_EL2); break;
-        case 11: val = MRS(ICH_LR11_EL2); break;
-        case 12: val = MRS(ICH_LR12_EL2); break;
-        case 13: val = MRS(ICH_LR13_EL2); break;
-        case 14: val = MRS(ICH_LR14_EL2); break;
-        case 15: val = MRS(ICH_LR15_EL2); break;
+    switch (i) {
+        case 0:
+            val = MRS(ICH_LR0_EL2);
+            break;
+        case 1:
+            val = MRS(ICH_LR1_EL2);
+            break;
+        case 2:
+            val = MRS(ICH_LR2_EL2);
+            break;
+        case 3:
+            val = MRS(ICH_LR3_EL2);
+            break;
+        case 4:
+            val = MRS(ICH_LR4_EL2);
+            break;
+        case 5:
+            val = MRS(ICH_LR5_EL2);
+            break;
+        case 6:
+            val = MRS(ICH_LR6_EL2);
+            break;
+        case 7:
+            val = MRS(ICH_LR7_EL2);
+            break;
+        case 8:
+            val = MRS(ICH_LR8_EL2);
+            break;
+        case 9:
+            val = MRS(ICH_LR9_EL2);
+            break;
+        case 10:
+            val = MRS(ICH_LR10_EL2);
+            break;
+        case 11:
+            val = MRS(ICH_LR11_EL2);
+            break;
+        case 12:
+            val = MRS(ICH_LR12_EL2);
+            break;
+        case 13:
+            val = MRS(ICH_LR13_EL2);
+            break;
+        case 14:
+            val = MRS(ICH_LR14_EL2);
+            break;
+        case 15:
+            val = MRS(ICH_LR15_EL2);
+            break;
     }
     return val;
 }
 
-inline void gich_write_lr(size_t i, uint32_t val){
-
-    switch(i) {
-        case 0:  MSR(ICH_LR0_EL2, val); break;
-        case 1:  MSR(ICH_LR1_EL2, val); break;
-        case 2:  MSR(ICH_LR2_EL2, val); break;
-        case 3:  MSR(ICH_LR3_EL2, val); break;
-        case 4:  MSR(ICH_LR4_EL2, val); break;
-        case 5:  MSR(ICH_LR5_EL2, val); break;
-        case 6:  MSR(ICH_LR6_EL2, val); break;
-        case 7:  MSR(ICH_LR7_EL2, val); break;
-        case 8:  MSR(ICH_LR8_EL2, val); break;
-        case 9:  MSR(ICH_LR9_EL2, val); break;
-        case 10: MSR(ICH_LR10_EL2, val); break;
-        case 11: MSR(ICH_LR11_EL2, val); break;
-        case 12: MSR(ICH_LR12_EL2, val); break;
-        case 13: MSR(ICH_LR13_EL2, val); break;
-        case 14: MSR(ICH_LR14_EL2, val); break;
-        case 15: MSR(ICH_LR15_EL2, val); break;
+inline void gich_write_lr(size_t i, uint32_t val)
+{
+    switch (i) {
+        case 0:
+            MSR(ICH_LR0_EL2, val);
+            break;
+        case 1:
+            MSR(ICH_LR1_EL2, val);
+            break;
+        case 2:
+            MSR(ICH_LR2_EL2, val);
+            break;
+        case 3:
+            MSR(ICH_LR3_EL2, val);
+            break;
+        case 4:
+            MSR(ICH_LR4_EL2, val);
+            break;
+        case 5:
+            MSR(ICH_LR5_EL2, val);
+            break;
+        case 6:
+            MSR(ICH_LR6_EL2, val);
+            break;
+        case 7:
+            MSR(ICH_LR7_EL2, val);
+            break;
+        case 8:
+            MSR(ICH_LR8_EL2, val);
+            break;
+        case 9:
+            MSR(ICH_LR9_EL2, val);
+            break;
+        case 10:
+            MSR(ICH_LR10_EL2, val);
+            break;
+        case 11:
+            MSR(ICH_LR11_EL2, val);
+            break;
+        case 12:
+            MSR(ICH_LR12_EL2, val);
+            break;
+        case 13:
+            MSR(ICH_LR13_EL2, val);
+            break;
+        case 14:
+            MSR(ICH_LR14_EL2, val);
+            break;
+        case 15:
+            MSR(ICH_LR15_EL2, val);
+            break;
     }
 }
 
@@ -114,7 +175,6 @@ static inline void gicr_init()
         gicr.IPRIORITYR[i] = -1;
     }
 }
-
 
 void gicc_save_state(gicc_state_t *state)
 {
@@ -158,15 +218,14 @@ void gicc_restore_state(gicc_state_t *state)
     // }
 }
 
-
 void gic_cpu_init()
 {
     gicr_init();
     gicc_init();
 }
 
-void gicd_init(){
-
+void gicd_init()
+{
     mem_map_dev(&cpu.as, (void *)&gicd, platform.arch.gic.gicd_addr,
                 NUM_PAGES(sizeof(gicd)));
 
@@ -196,7 +255,7 @@ void gicd_init(){
     /* No need to setup gicd.NSACR as all interrupts are  setup to group 1 */
 
     interrupts_reserve(platform.arch.gic.maintenance_id,
-                    gic_maintenance_handler);
+                       gic_maintenance_handler);
 
     /* Enable distributor and affinity routing */
     gicd.CTLR |= GICD_CTLR_ARE_NS_BIT | GICD_CTLR_ENA_BIT;
@@ -206,7 +265,7 @@ void gic_init()
 {
     gic_cpu_init();
 
-    if(cpu.id == CPU_MASTER){
+    if (cpu.id == CPU_MASTER) {
         gicd_init();
         NUM_LRS = gich_num_lrs();
     }
@@ -227,7 +286,6 @@ void gic_handle()
 
     if (res == HANDLED_BY_HYP) MSR(ICC_DIR_EL1, ack);
 }
-
 
 void gicd_send_sgi(uint64_t cpu_target, uint64_t sgi_num)
 {
@@ -269,10 +327,9 @@ void gicd_set_prio(uint64_t int_id, uint8_t prio)
     uint64_t off = GIC_PRIO_OFF(int_id);
     uint64_t mask = BIT_MASK(off, GIC_PRIO_BITS);
 
-
     spin_lock(&gicd_lock);
 
-    if(gic_is_priv(int_id)){
+    if (gic_is_priv(int_id)) {
         gicr.IPRIORITYR[reg_ind] =
             (gicr.IPRIORITYR[reg_ind] & ~mask) | ((prio << off) & mask);
     } else {
@@ -361,8 +418,7 @@ void gicd_set_trgt(uint64_t int_id, uint8_t trgt)
 
 void gicd_set_route(uint64_t int_id, uint8_t trgt)
 {
-    if(gic_is_priv(int_id))
-        return;
+    if (gic_is_priv(int_id)) return;
 
     gicd.IROUTER[int_id] = trgt;
 }
@@ -371,15 +427,182 @@ void gicd_set_enable(uint64_t int_id, bool en)
 {
     uint64_t bit = GIC_INT_MASK(int_id);
 
-    if(gic_is_priv(int_id)){
-        if (en) gicr.ISENABLER0 = bit;
-        else gicr.ICENABLER0 = bit;
+    if (gic_is_priv(int_id)) {
+        if (en)
+            gicr.ISENABLER0 = bit;
+        else
+            gicr.ICENABLER0 = bit;
     } else {
         uint64_t reg_ind = GIC_INT_REG(int_id);
         spin_lock(&gicd_lock);
-        if (en) gicd.ISENABLER[reg_ind] = bit;
-        else gicd.ICENABLER[reg_ind] = bit;
+        if (en)
+            gicd.ISENABLER[reg_ind] = bit;
+        else
+            gicd.ICENABLER[reg_ind] = bit;
         spin_unlock(&gicd_lock);
     }
-
 }
+
+void gicr_send_sgi(uint64_t cpu_target, uint64_t sgi_num)
+{
+    // TODO
+}
+
+void gicr_set_prio(uint64_t int_id, uint8_t prio)
+{
+    // TODO
+}
+
+uint64_t gicr_get_prio(uint64_t int_id)
+{
+    // TODO
+}
+
+void gicr_set_icfgr(uint64_t int_id, uint8_t cfg)
+{
+    // TODO
+}
+
+enum int_state gicr_get_state(uint64_t int_id)
+{
+    // TODO
+}
+
+static void gicr_set_pend(uint64_t int_id, bool pend)
+{
+    // TODO
+}
+
+void gicr_set_act(uint64_t int_id, bool act)
+{
+    // TODO
+}
+
+void gicr_set_state(uint64_t int_id, enum int_state state)
+{
+    // TODO
+}
+
+void gicr_set_trgt(uint64_t int_id, uint8_t trgt)
+{
+    // TODO
+}
+
+void gicr_set_route(uint64_t int_id, uint8_t trgt)
+{
+    // TODO
+}
+
+void gicr_set_enable(uint64_t int_id, bool en)
+{
+    // TODO
+}
+
+static bool irq_in_gicd(uint64_t int_id)
+{
+    if (int_id > 32 && int_id < 1025) return true;
+
+    if (int_id < 32 && !(gicd.CTLR & GICD_CTLR_ARE_NS_BIT)) return true;
+
+    return false;
+}
+
+void gic_send_sgi(uint64_t cpu_target, uint64_t sgi_num)
+{
+    if (irq_in_gicd(sgi_num)) {
+        return gicd_send_sgi(cpu_target, sgi_num);
+    } else {
+        return gicr_send_sgi(cpu_target, sgi_num);
+    }
+}
+
+void gic_set_prio(uint64_t int_id, uint8_t prio)
+{
+    if (irq_in_gicd(int_id)) {
+        return gicd_set_prio(int_id, prio);
+    } else {
+        return gicr_set_prio(int_id, prio);
+    }
+}
+
+uint64_t gic_get_prio(uint64_t int_id)
+{
+    if (irq_in_gicd(int_id)) {
+        return gicd_get_prio(int_id);
+    } else {
+        return gicr_get_prio(int_id);
+    }
+}
+
+void gic_set_icfgr(uint64_t int_id, uint8_t cfg)
+{
+    if (irq_in_gicd(int_id)) {
+        return gicd_set_icfgr(int_id, cfg);
+    } else {
+        return gicr_set_icfgr(int_id, cfg);
+    }
+}
+
+enum int_state gic_get_state(uint64_t int_id)
+{
+    if (irq_in_gicd(int_id)) {
+        return gicd_get_state(int_id);
+    } else {
+        return gicr_get_state(int_id);
+    }
+}
+
+static void gic_set_pend(uint64_t int_id, bool pend)
+{
+    if (irq_in_gicd(int_id)) {
+        return gicd_set_pend(int_id, pend);
+    } else {
+        return gicr_set_pend(int_id, pend);
+    }
+}
+
+void gic_set_act(uint64_t int_id, bool act)
+{
+    if (irq_in_gicd(int_id)) {
+        return gicd_set_act(int_id, act);
+    } else {
+        return gicr_set_act(int_id, act);
+    }
+}
+
+void gic_set_state(uint64_t int_id, enum int_state state)
+{
+    if (irq_in_gicd(int_id)) {
+        return gicd_set_state(int_id, state);
+    } else {
+        return gicr_set_state(int_id, state);
+    }
+}
+
+void gic_set_trgt(uint64_t int_id, uint8_t trgt)
+{
+    if (irq_in_gicd(int_id)) {
+        return gicd_set_trgt(int_id, trgt);
+    } else {
+        return gicr_set_trgt(int_id, trgt);
+    }
+}
+
+void gic_set_route(uint64_t int_id, uint8_t trgt)
+{
+    if (irq_in_gicd(int_id)) {
+        return gicd_set_route(int_id, trgt);
+    } else {
+        return gicr_set_route(int_id, trgt);
+    }
+}
+
+void gic_set_enable(uint64_t int_id, bool en)
+{
+    if (irq_in_gicd(int_id)) {
+        return gicd_set_enable(int_id, en);
+    } else {
+        return gicr_set_enable(int_id, en);
+    }
+}
+

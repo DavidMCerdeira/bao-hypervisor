@@ -345,6 +345,18 @@ void gicd_send_sgi(uint64_t cpu_target, uint64_t sgi_num);
 void gicc_save_state(gicc_state_t *state);
 void gicc_restore_state(gicc_state_t *state);
 
+
+void gic_set_enable(uint64_t int_id, bool en);
+void gic_set_prio(uint64_t int_id, uint8_t prio);
+void gic_set_icfgr(uint64_t int_id, uint8_t cfg);
+void gic_set_act(uint64_t int_id, bool act);
+void gic_set_state(uint64_t int_id, enum int_state state);
+void gic_set_trgt(uint64_t int_id, uint8_t trgt);
+void gic_set_route(uint64_t int_id, uint8_t trgt);
+uint64_t gic_get_prio(uint64_t int_id);
+enum int_state gic_get_state(uint64_t int_id);
+
+
 void gicd_set_enable(uint64_t int_id, bool en);
 void gicd_set_prio(uint64_t int_id, uint8_t prio);
 void gicd_set_icfgr(uint64_t int_id, uint8_t cfg);
@@ -354,6 +366,17 @@ void gicd_set_trgt(uint64_t int_id, uint8_t trgt);
 void gicd_set_route(uint64_t int_id, uint8_t trgt);
 uint64_t gicd_get_prio(uint64_t int_id);
 enum int_state gicd_get_state(uint64_t int_id);
+
+
+void gicr_set_enable(uint64_t int_id, bool en);
+void gicr_set_prio(uint64_t int_id, uint8_t prio);
+void gicr_set_icfgr(uint64_t int_id, uint8_t cfg);
+void gicr_set_act(uint64_t int_id, bool act);
+void gicr_set_state(uint64_t int_id, enum int_state state);
+void gicr_set_trgt(uint64_t int_id, uint8_t trgt);
+void gicr_set_route(uint64_t int_id, uint8_t trgt);
+uint64_t gicr_get_prio(uint64_t int_id);
+enum int_state gicr_get_state(uint64_t int_id);
 
 uint32_t gich_read_lr(size_t i);
 void gich_write_lr(size_t i, uint32_t val);
