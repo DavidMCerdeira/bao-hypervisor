@@ -935,191 +935,194 @@ bool vgicd_emul_handler(emul_access_t *acc)
 
 void vgicr_set_ctlr(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
 {
-    // TODO
+    ERROR("No Emulation for vgicr_set_ctlr");
 }
 
 uint32_t vgicr_get_ctlr(vcpu_t *vcpu, uint32_t int_id)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_get_ctlr");
     return 0;
 }
 
-void vgicr_emul_ctlr_access(emul_access_t *acc) {}
+void vgicr_emul_ctlr_access(emul_access_t *acc)
+{
+    ERROR("No emulation for: vgicr_emul_ctlr_access");
+}
 
 uint32_t vgicr_get_iidr(vcpu_t *vcpu, uint32_t int_id)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_get_iidr");
     return 0;
 }
 
 void vgicr_set_iidr(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_set_iidr");
 }
 
 void vgicr_emul_iidr_access(emul_access_t *acc)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_emul_iidr_access");
 }
 
 void vgicr_set_typer(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_set_typer");
 }
 
 uint32_t vgicr_get_typer(vcpu_t *vcpu, uint32_t int_id)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_get_typer");
     return 0;
 }
 
 void vgicr_emul_typer_access(emul_access_t *acc)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_emul_typer_access");
 }
 
 uint32_t vgicr_get_statusr(vcpu_t *vcpu, uint32_t int_id)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_get_statusr");
     return 0;
 }
 
 void vgicr_set_statusr(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_set_statusr");
 }
 
 void vgicr_emul_statusr_access(emul_access_t *acc)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_emul_statusr_access");
 }
 
 uint32_t vgicr_get_waker(vcpu_t *vcpu, uint32_t int_id)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_get_waker");
     return 0;
 }
 
 void vgicr_set_waker(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_set_waker");
 }
 
 void vgicr_emul_waker_access(emul_access_t *acc)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_emul_waker_access");
 }
 
 uint32_t vgicr_get_clrlpir(vcpu_t *vcpu, uint32_t int_id)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_get_clrlpir");
     return 0;
 }
 
 void vgicr_set_clrlpir(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_set_clrlpir");
 }
 
 void vgicr_emul_clrlpir_access(emul_access_t *acc)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_emul_clrlpir_access");
 }
 
 uint32_t vgicr_get_setlpir(vcpu_t *vcpu, uint32_t int_id)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_get_setlpir");
     return 0;
 }
 
 void vgicr_set_setlpir(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_set_setlpir");
 }
 
 void vgicr_emul_setlpir_access(emul_access_t *acc)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_emul_setlpir_access");
 }
 
 uint32_t vgicr_get_propbaser(vcpu_t *vcpu, uint32_t int_id)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_get_propbaser");
     return 0;
 }
 
 void vgicr_set_propbaser(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_set_propbaser");
 }
 
 void vgicr_emul_propbaser_access(emul_access_t *acc)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_emul_propbaser_access");
 }
 
 uint32_t vgicr_get_pendbaser(vcpu_t *vcpu, uint32_t int_id)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_get_pendbaser");
     return 0;
 }
 
 void vgicr_set_pendbaser(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_set_pendbaser");
 }
 
 void vgicr_emul_pendbaser_access(emul_access_t *acc)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_emul_pendbaser_access");
 }
 
 uint32_t vgicr_get_invlpir(vcpu_t *vcpu, uint32_t int_id)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_get_invlpir");
     return 0;
 }
 
 void vgicr_set_invlpir(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_set_invlpir");
 }
 
 void vgicr_emul_invlpir_access(emul_access_t *acc)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_emul_invlpir_access");
 }
 
 uint32_t vgicr_get_invallr(vcpu_t *vcpu, uint32_t int_id)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_get_invallr");
     return 0;
 }
 
 void vgicr_set_invallr(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_set_invallr");
 }
 
 void vgicr_emul_invallr_access(emul_access_t *acc)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_emul_invallr_access");
 }
 
 uint32_t vgicr_get_syncr(vcpu_t *vcpu, uint32_t int_id)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_get_syncr");
     return 0;
 }
 
 void vgicr_set_syncr(vcpu_t *vcpu, uint32_t int_id, uint32_t val)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_set_syncr");
 }
 
 void vgicr_emul_syncr_access(emul_access_t *acc)
 {
-    // TODO
+    ERROR("No emulation for: vgicr_emul_syncr_access");
 }
 
 /* SGI related */
@@ -1527,6 +1530,15 @@ bool vgicr_emul_handler(emul_access_t *acc)
     return true;
 }
 
+static bool irq_in_gicd(uint64_t int_id)
+{
+    if (int_id > 32 && int_id < 1025) return true;
+
+    if (int_id < 32 && !(gicd.CTLR & GICD_CTLR_ARE_NS_BIT)) return true;
+
+    return false;
+}
+
 void vgicd_inject(vgicd_t *vgicd, uint64_t id, uint64_t source)
 {
     vgic_int_t *interrupt = vgic_get_int(cpu.vcpu, id & 0x3ff);
@@ -1545,21 +1557,23 @@ void vgicd_inject(vgicd_t *vgicd, uint64_t id, uint64_t source)
 
 void vgicr_inject(vgicd_t *vgicd, uint64_t id, uint64_t source)
 {
-    //TODO
-}
+    vgic_int_t *interrupt = vgic_get_int(cpu.vcpu, id & 0x3ff);
 
-static bool irq_in_gicd(uint64_t int_id)
-{
-    if (int_id > 32 && int_id < 1025) return true;
-
-    if (int_id < 32 && !(gicd.CTLR & GICD_CTLR_ARE_NS_BIT)) return true;
-
-    return false;
+    if (interrupt->hw) {
+        spin_lock(&interrupt->lock);
+        interrupt->owner = cpu.vcpu;
+        interrupt->state = PEND;
+        interrupt->in_lr = false;
+        vgicr_route(cpu.vcpu, interrupt);
+        spin_unlock(&interrupt->lock);
+    } else {
+        vgicd_set_pend(cpu.vcpu, id, true);
+    }
 }
 
 void vgic_inject(vgicd_t *vgicd, uint64_t id, uint64_t source)
 {
-    if(irq_in_gicd(id)){
+    if (irq_in_gicd(id)) {
         vgicd_inject(vgicd, id, source);
     } else {
         vgicr_inject(vgicd, id, source);
@@ -1719,8 +1733,11 @@ void vgic_eoir_highest_spilled_active(vcpu_t *vcpu)
     if (interrupt) {
         interrupt->state &= ~ACT;
         if (interrupt->hw) {
-            // TODO: take gicr interrupts
-            gicd_set_act(interrupt->id, false);
+            if (irq_in_gicd(interrupt->id)) {
+                gicd_set_act(interrupt->id, false);
+            } else {
+                gicr_set_act(interrupt->id, false);
+            }
         } else {
             if (interrupt->state & PEND) {
                 vgic_add_lr(vcpu, interrupt);
@@ -1732,7 +1749,6 @@ void vgic_eoir_highest_spilled_active(vcpu_t *vcpu)
 
 void vgic_handle_trapped_eoir(vcpu_t *vcpu)
 {
-    // TODO
     int64_t lr_ind = -1;
     uint32_t eisr = 0;
     while (
@@ -1782,13 +1798,6 @@ void vgic_init(vm_t *vm, const struct gic_dscrp *gic_dscrp)
         (gicd.TYPER & GICD_TYPER_ITLN_MSK) |
         (((vm->cpu_num - 1) << GICD_TYPER_CPUN_OFF) & GICD_TYPER_CPUN_MSK);
     vm->arch.vgicd.IIDR = gicd.IIDR;
-
-    size_t n = NUM_PAGES(sizeof(gicc_t));
-    void *va =
-        mem_alloc_vpage(&vm->as, SEC_VM_ANY, (void *)gic_dscrp->gicc_addr, n);
-    if (va != (void *)gic_dscrp->gicc_addr)
-        ERROR("failed to alloc vm address space to hold gicc");
-    mem_map_dev(&vm->as, va, platform.arch.gic.gicv_addr, n);
 
     for (int i = 0; i < GIC_MAX_SPIS; i++) {
         vm->arch.vgicd.interrupts[i].id = i + GIC_CPU_PRIV;

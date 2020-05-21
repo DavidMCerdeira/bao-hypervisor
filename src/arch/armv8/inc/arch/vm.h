@@ -20,8 +20,13 @@
 #include <arch/vgic.h>
 #include <arch/psci.h>
 
+#define USE_GICV3
+
 typedef struct {
     vgicd_t vgicd;
+#ifdef USE_GICV3
+    vgicr_t vgicr;
+#endif
 } vm_arch_t;
 
 typedef struct {

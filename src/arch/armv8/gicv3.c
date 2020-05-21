@@ -26,6 +26,7 @@ volatile gicd_t gicd __attribute__((section(".devices")));
 volatile gicr_t gicr __attribute__((section(".cpu_private_devices")));
 
 static spinlock_t gicd_lock;
+static spinlock_t gicr_lock;
 
 uint64_t NUM_LRS;
 
@@ -178,44 +179,44 @@ static inline void gicr_init()
 
 void gicc_save_state(gicc_state_t *state)
 {
-    // state->CTLR = gicc.CTLR;
-    // state->PMR = gicc.PMR;
-    // state->BPR = gicc.BPR;
-    // state->IAR = gicc.IAR;
-    // state->EOIR = gicc.EOIR;
-    // state->RPR = gicc.RPR;
-    // state->HPPIR = gicc.HPPIR;
-    // state->priv_ISENABLER = gicd.ISENABLER[0];
+    state->CTLR	    = MRS(ICC_CTLR_EL1);
+    state->PMR	    = MRS(ICC_PMR_EL1);
+    state->IAR	    = MRS(ICC_IAR1_EL1);
+    state->BPR	    = MRS(ICC_BPR1_EL1);
+    state->EOIR	    = MRS(ICC_EOIR1_EL1);
+    state->RPR	    = MRS(ICC_RPR_EL1);
+    state->HPPIR    = MRS(ICC_HPPIR1_EL1);
+    state->priv_ISENABLER = gicr.ISENABLER0;
 
-    // for (int i = 0; i < GIC_NUM_PRIO_REGS(GIC_CPU_PRIV); i++) {
-    //     state->priv_IPRIORITYR[i] = gicd.IPRIORITYR[i];
-    // }
+    for (int i = 0; i < GIC_NUM_PRIO_REGS(GIC_CPU_PRIV); i++) {
+        state->priv_IPRIORITYR[i] = gicr.IPRIORITYR[i];
+    }
 
-    // state->HCR = gich.HCR;
-    // for (int i = 0; i < gich_num_lrs(); i++) {
-    //     state->LR[i] = gich.LR[i];
-    // }
+    state->HCR = MRS(ICH_HCR_EL2);
+    for (int i = 0; i < gich_num_lrs(); i++) {
+        state->LR[i] = gich_read_lr(i);
+    }
 }
 
 void gicc_restore_state(gicc_state_t *state)
 {
-    // gicc.CTLR = state->CTLR;
-    // gicc.PMR = state->PMR;
-    // gicc.BPR = state->BPR;
-    // gicc.IAR = state->IAR;
-    // gicc.EOIR = state->EOIR;
-    // gicc.RPR = state->RPR;
-    // gicc.HPPIR = state->HPPIR;
-    // gicd.ISENABLER[0] = state->priv_ISENABLER;
+    MSR(ICC_CTLR_EL1,	state->CTLR);
+    MSR(ICC_PMR_EL1,	state->PMR);
+    MSR(ICC_BPR1_EL1,	state->BPR);
+    MSR(ICC_EOIR1_EL1,	state->EOIR);
+    MSR(ICC_IAR1_EL1,	state->IAR);
+    MSR(ICC_RPR_EL1,	state->RPR);
+    MSR(ICC_HPPIR1_EL1,	state->HPPIR);
+    gicr.ISENABLER0 = state->priv_ISENABLER;
 
-    // for (int i = 0; i < GIC_NUM_PRIO_REGS(GIC_CPU_PRIV); i++) {
-    //     gicd.IPRIORITYR[i] = state->priv_IPRIORITYR[i];
-    // }
+    for (int i = 0; i < GIC_NUM_PRIO_REGS(GIC_CPU_PRIV); i++) {
+        gicr.IPRIORITYR[i] = state->priv_IPRIORITYR[i];
+    }
 
-    // gich.HCR = state->HCR;
-    // for (int i = 0; i < gich_num_lrs(); i++) {
-    //     gich.LR[i] = state->LR[i];
-    // }
+    MSR(ICH_HCR_EL2, state->HCR);
+    for (int i = 0; i < gich_num_lrs(); i++) {
+        gich_write_lr(i, state->LR[i]);
+    }
 }
 
 void gic_cpu_init()
@@ -289,7 +290,8 @@ void gic_handle()
 
 void gicd_send_sgi(uint64_t cpu_target, uint64_t sgi_num)
 {
-    MSR(ICC_SGI1R_EL1, (1UL << cpu_target) | (sgi_num) << 24);
+    gicd.SGIR = (1UL << (GICD_SGIR_CPUTRGLST_OFF + cpu_target)) |
+                (sgi_num & GICD_SGIR_SGIINTID_MSK);
 }
 
 uint64_t gicd_get_prio(uint64_t int_id)
@@ -309,16 +311,15 @@ uint64_t gicd_get_prio(uint64_t int_id)
 
 void gicd_set_icfgr(uint64_t int_id, uint8_t cfg)
 {
-    // spin_lock(&gicd_lock);
+    spin_lock(&gicd_lock);
 
-    // uint64_t reg_ind = (int_id*GIC_CONFIG_BITS)/(sizeof(uint32_t)*8);
-    // uint64_t off = (int_id*GIC_CONFIG_BITS)%(sizeof(uint32_t)*8);
-    // uint64_t mask = ((1U << GIC_CONFIG_BITS) - 1) << off;
+    uint64_t reg_ind = (int_id * GIC_CONFIG_BITS) / (sizeof(uint32_t) * 8);
+    uint64_t off = (int_id * GIC_CONFIG_BITS) % (sizeof(uint32_t) * 8);
+    uint64_t mask = ((1U << GIC_CONFIG_BITS) - 1) << off;
 
-    // gicd.ICFGR[reg_ind] =
-    //     (gicd.ICFGR[reg_ind] & ~mask) | ((cfg << off) & mask);
+    gicd.ICFGR[reg_ind] = (gicd.ICFGR[reg_ind] & ~mask) | ((cfg << off) & mask);
 
-    // spin_unlock(&gicd_lock);
+    spin_unlock(&gicd_lock);
 }
 
 void gicd_set_prio(uint64_t int_id, uint8_t prio)
@@ -329,77 +330,72 @@ void gicd_set_prio(uint64_t int_id, uint8_t prio)
 
     spin_lock(&gicd_lock);
 
-    if (gic_is_priv(int_id)) {
-        gicr.IPRIORITYR[reg_ind] =
-            (gicr.IPRIORITYR[reg_ind] & ~mask) | ((prio << off) & mask);
-    } else {
-        gicd.IPRIORITYR[reg_ind] =
-            (gicd.IPRIORITYR[reg_ind] & ~mask) | ((prio << off) & mask);
-    }
+    gicd.IPRIORITYR[reg_ind] =
+        (gicd.IPRIORITYR[reg_ind] & ~mask) | ((prio << off) & mask);
 
     spin_unlock(&gicd_lock);
 }
 
 enum int_state gicd_get_state(uint64_t int_id)
 {
-    // uint64_t reg_ind = GIC_INT_REG(int_id);
-    // uint64_t mask = GIC_INT_MASK(int_id);
+    uint64_t reg_ind = GIC_INT_REG(int_id);
+    uint64_t mask = GIC_INT_MASK(int_id);
 
-    // spin_lock(&gicd_lock);
+    spin_lock(&gicd_lock);
 
-    // enum int_state pend = (gicd.ISPENDR[reg_ind] & mask) ? PEND : 0;
-    // enum int_state act = (gicd.ISACTIVER[reg_ind] & mask) ? ACT : 0;
+    enum int_state pend = (gicd.ISPENDR[reg_ind] & mask) ? PEND : 0;
+    enum int_state act = (gicd.ISACTIVER[reg_ind] & mask) ? ACT : 0;
 
-    // spin_unlock(&gicd_lock);
+    spin_unlock(&gicd_lock);
 
-    // return pend | act;
+    return pend | act;
 }
 
 static void gicd_set_pend(uint64_t int_id, bool pend)
 {
-    // spin_lock(&gicd_lock);
+    spin_lock(&gicd_lock);
 
-    // if (gic_is_sgi(int_id)) {
-    //     uint64_t reg_ind = GICD_SGI_REG(int_id);
-    //     uint64_t off = GICD_SGI_OFF(int_id);
+    if (gic_is_sgi(int_id)) {
+        uint64_t reg_ind = GICD_SGI_REG(int_id);
+        uint64_t off = GICD_SGI_OFF(int_id);
 
-    //     if (pend) {
-    //         gicd.SPENDSGIR[reg_ind] = (1U) << (off + cpu.id);
-    //     } else {
-    //         gicd.CPENDSGIR[reg_ind] = BIT_MASK(off, 8);
-    //     }
-    // } else {
-    //     uint64_t reg_ind = GIC_INT_REG(int_id);
+        if (pend) {
+            gicd.SPENDSGIR[reg_ind] = (1U) << (off + cpu.id);
+        } else {
+            gicd.CPENDSGIR[reg_ind] = BIT_MASK(off, 8);
+        }
+    } else {
+        uint64_t reg_ind = GIC_INT_REG(int_id);
 
-    //     if (pend) {
-    //         gicd.ISPENDR[reg_ind] = GIC_INT_MASK(int_id);
-    //     } else {
-    //         gicd.ICPENDR[reg_ind] = GIC_INT_MASK(int_id);
-    //     }
-    // }
+        if (pend) {
+            gicd.ISPENDR[reg_ind] = GIC_INT_MASK(int_id);
+        } else {
+            gicd.ICPENDR[reg_ind] = GIC_INT_MASK(int_id);
+        }
+    }
 
-    // spin_unlock(&gicd_lock);
+    spin_unlock(&gicd_lock);
 }
 
 void gicd_set_act(uint64_t int_id, bool act)
 {
-    // uint64_t reg_ind = GIC_INT_REG(int_id);
+    uint64_t reg_ind = GIC_INT_REG(int_id);
 
-    // spin_lock(&gicd_lock);
+    spin_lock(&gicd_lock);
 
-    // if (act) {
-    //     gicd.ISACTIVER[reg_ind] = GIC_INT_MASK(int_id);
-    // } else {
-    //     gicd.ICACTIVER[reg_ind] = GIC_INT_MASK(int_id);
-    // }
+    if (act) {
+        gicd.ISACTIVER[reg_ind] = GIC_INT_MASK(int_id);
+    } else {
+        gicd.ICACTIVER[reg_ind] = GIC_INT_MASK(int_id);
+    }
 
-    // spin_unlock(&gicd_lock);
+    spin_unlock(&gicd_lock);
 }
 
 void gicd_set_state(uint64_t int_id, enum int_state state)
 {
-    // gicd_set_act(int_id, state & ACT);
-    // gicd_set_pend(int_id, state & PEND);
+    gicd_set_act(int_id, state & ACT);
+    gicd_set_pend(int_id, state & PEND);
 }
 
 void gicd_set_trgt(uint64_t int_id, uint8_t trgt)
@@ -427,75 +423,132 @@ void gicd_set_enable(uint64_t int_id, bool en)
 {
     uint64_t bit = GIC_INT_MASK(int_id);
 
-    if (gic_is_priv(int_id)) {
-        if (en)
-            gicr.ISENABLER0 = bit;
-        else
-            gicr.ICENABLER0 = bit;
-    } else {
-        uint64_t reg_ind = GIC_INT_REG(int_id);
-        spin_lock(&gicd_lock);
-        if (en)
-            gicd.ISENABLER[reg_ind] = bit;
-        else
-            gicd.ICENABLER[reg_ind] = bit;
-        spin_unlock(&gicd_lock);
-    }
+    uint64_t reg_ind = GIC_INT_REG(int_id);
+    spin_lock(&gicd_lock);
+    if (en)
+        gicd.ISENABLER[reg_ind] = bit;
+    else
+        gicd.ICENABLER[reg_ind] = bit;
+    spin_unlock(&gicd_lock);
 }
 
 void gicr_send_sgi(uint64_t cpu_target, uint64_t sgi_num)
 {
-    // TODO
+    MSR(ICC_SGI1R_EL1, (1UL << cpu_target) | (sgi_num) << 24);
 }
 
 void gicr_set_prio(uint64_t int_id, uint8_t prio)
 {
-    // TODO
+    uint64_t reg_ind = GIC_PRIO_REG(int_id);
+    uint64_t off = GIC_PRIO_OFF(int_id);
+    uint64_t mask = BIT_MASK(off, GIC_PRIO_BITS);
+
+    spin_lock(&gicr_lock);
+
+    gicr.IPRIORITYR[reg_ind] =
+        (gicr.IPRIORITYR[reg_ind] & ~mask) | ((prio << off) & mask);
+
+    spin_unlock(&gicr_lock);
 }
 
 uint64_t gicr_get_prio(uint64_t int_id)
 {
-    // TODO
+    uint64_t reg_ind = GIC_PRIO_REG(int_id);
+    uint64_t off = GIC_PRIO_OFF(int_id);
+
+    spin_lock(&gicr_lock);
+
+    uint64_t prio =
+        gicr.IPRIORITYR[reg_ind] >> off & BIT_MASK(off, GIC_PRIO_BITS);
+
+    spin_unlock(&gicr_lock);
+
+    return prio;
 }
 
 void gicr_set_icfgr(uint64_t int_id, uint8_t cfg)
 {
-    // TODO
+    spin_lock(&gicr_lock);
+
+    uint64_t reg_ind = (int_id * GIC_CONFIG_BITS) / (sizeof(uint32_t) * 8);
+    uint64_t off = (int_id * GIC_CONFIG_BITS) % (sizeof(uint32_t) * 8);
+    uint64_t mask = ((1U << GIC_CONFIG_BITS) - 1) << off;
+
+    if (reg_ind == 0) {
+        gicr.ICFGR0 = (gicr.ICFGR0 & ~mask) | ((cfg << off) & mask);
+    } else {
+        gicr.ICFGR1 = (gicr.ICFGR1 & ~mask) | ((cfg << off) & mask);
+    }
+
+    spin_unlock(&gicr_lock);
 }
 
 enum int_state gicr_get_state(uint64_t int_id)
 {
-    // TODO
+    uint64_t mask = GIC_INT_MASK(int_id);
+
+    spin_lock(&gicr_lock);
+
+    enum int_state pend = (gicr.ISPENDR0 & mask) ? PEND : 0;
+    enum int_state act = (gicr.ISACTIVER0 & mask) ? ACT : 0;
+
+    spin_unlock(&gicr_lock);
+
+    return pend | act;
 }
 
 static void gicr_set_pend(uint64_t int_id, bool pend)
 {
-    // TODO
+    spin_lock(&gicr_lock);
+    if (pend) {
+        gicr.ISPENDR0 = (1U) << (int_id);
+    } else {
+        gicr.ICPENDR0 = (1U) << (int_id);
+    }
+    spin_unlock(&gicr_lock);
 }
 
 void gicr_set_act(uint64_t int_id, bool act)
 {
-    // TODO
+    spin_lock(&gicr_lock);
+
+    if (act) {
+        gicr.ISACTIVER0 = GIC_INT_MASK(int_id);
+    } else {
+        gicr.ICACTIVER0 = GIC_INT_MASK(int_id);
+    }
+
+    spin_unlock(&gicr_lock);
 }
 
 void gicr_set_state(uint64_t int_id, enum int_state state)
 {
-    // TODO
+    gicr_set_act(int_id, state & ACT);
+    gicr_set_pend(int_id, state & PEND);
 }
 
 void gicr_set_trgt(uint64_t int_id, uint8_t trgt)
 {
-    // TODO
+    spin_lock(&gicr_lock);
+
+    spin_unlock(&gicr_lock);
 }
 
 void gicr_set_route(uint64_t int_id, uint8_t trgt)
 {
-    // TODO
+    gicr_set_trgt(int_id, trgt);
 }
 
 void gicr_set_enable(uint64_t int_id, bool en)
 {
-    // TODO
+    uint64_t bit = GIC_INT_MASK(int_id);
+
+    spin_lock(&gicr_lock);
+    if (en)
+        gicr.ISENABLER0 = bit;
+    else
+        gicr.ICENABLER0 = bit;
+    spin_unlock(&gicr_lock);
 }
 
 static bool irq_in_gicd(uint64_t int_id)

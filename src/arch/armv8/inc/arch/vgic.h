@@ -47,6 +47,16 @@ typedef struct {
     vgic_int_t interrupts[GIC_MAX_SPIS];
 } vgicd_t;
 
+
+typedef struct {
+    spinlock_t lock;
+    uint32_t CTLR;
+    uint32_t TYPER;
+    uint32_t IIDR;
+    vgic_int_t interrupts[GIC_MAX_SPIS];
+} vgicr_t;
+
+
 typedef struct {
     gich_t gich;
     int16_t curr_lrs[GIC_NUM_LIST_REGS];
@@ -61,6 +71,6 @@ typedef struct {
 void vgic_init(vm_t *vm, const struct gic_dscrp *gic_dscrp);
 void vgic_cpu_init(vcpu_t *vcpu);
 void vgic_set_hw(vm_t *vm, uint64_t id);
-void vgicd_inject(vgicd_t *vgicd, uint64_t id, uint64_t source);
+void vgic_inject(vgicd_t *vgicd, uint64_t id, uint64_t source);
 
 #endif /* __VGIC_H__ */
