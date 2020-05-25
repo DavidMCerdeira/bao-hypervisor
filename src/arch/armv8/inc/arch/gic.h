@@ -135,6 +135,8 @@ typedef struct {
     uint32_t SPENDSGIR[GIC_NUM_SGI_REGS];
     uint8_t pad7[0x6000 - 0x0F30];
     uint64_t IROUTER[GIC_MAX_INTERUPTS];
+    uint8_t pad8[0xFFD0 - 0x8000];
+    uint32_t ID[(0x10000-0xFFD0)/sizeof(uint32_t)];
 } __attribute__((__packed__, aligned(0x10000))) gicd_t;
 
 

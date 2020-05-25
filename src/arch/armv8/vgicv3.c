@@ -855,6 +855,12 @@ void vgicd_emul_sgiregs_access(emul_access_t *acc)
     }
 }
 
+void vgicd_emul_id_access(emul_access_t *acc){
+    if(!acc->write){
+        vcpu_writereg(cpu.vcpu, acc->reg, gicd.ID[((acc->addr & 0xff) - 0xd0)/4]);
+    }
+}
+
 bool vgicd_emul_handler(emul_access_t *acc)
 {
     if (acc->width > 4) return false;
@@ -870,6 +876,7 @@ bool vgicd_emul_handler(emul_access_t *acc)
         case GICD_REG_GROUP(ICPENDR):
         case GICD_REG_GROUP(ICACTIVER):
         case GICD_REG_GROUP(ICFGR):
+        case GICD_REG_GROUP(ID):
             /* Only allow aligned 32-bit accesses or byte */
             if (acc->width != 4 || acc->addr & 0x3) {
                 return false;
@@ -920,6 +927,9 @@ bool vgicd_emul_handler(emul_access_t *acc)
             break;
         case GICD_REG_GROUP(ICFGR):
             vgicd_emul_icfgr_access(acc);
+            break;
+        case GICD_REG_GROUP(ID):
+            vgicd_emul_id_access(acc);
             break;
         default:
             if (GICD_IS_REG(IPRIORITYR, acc_offset)) {
