@@ -855,15 +855,26 @@ void vgicd_emul_sgiregs_access(emul_access_t *acc)
     }
 }
 
-void vgicd_emul_id_access(emul_access_t *acc){
-    if(!acc->write){
-        vcpu_writereg(cpu.vcpu, acc->reg, gicd.ID[((acc->addr & 0xff) - 0xd0)/4]);
+void vgicd_emul_id_access(emul_access_t *acc)
+{
+    if (!acc->write) {
+        vcpu_writereg(cpu.vcpu, acc->reg,
+                      gicd.ID[((acc->addr & 0xff) - 0xd0) / 4]);
     }
 }
 
 bool vgicd_emul_handler(emul_access_t *acc)
 {
-    if (acc->width > 4) return false;
+    if (acc->width > 4) {
+        if (acc->write) {
+            WARNING("vigc3: vgicd 64bit write access at 0x%x ... ignoring",
+                    acc->addr);
+        } else {
+            WARNING("vigc3: vgicd 64bit read access at 0x%x ... ignoring",
+                    acc->addr);
+        }
+        return true;
+    }
 
     uint32_t acc_offset = acc->addr & 0xfff;
 
@@ -879,6 +890,7 @@ bool vgicd_emul_handler(emul_access_t *acc)
         case GICD_REG_GROUP(ID):
             /* Only allow aligned 32-bit accesses or byte */
             if (acc->width != 4 || acc->addr & 0x3) {
+                ERROR("vgicv3: missaligned access");
                 return false;
             }
             break;
@@ -887,6 +899,7 @@ bool vgicd_emul_handler(emul_access_t *acc)
             /* Allow byte access or align 16-bit accesses */
             if ((acc->width == 4 && (acc->addr & 0x3)) ||
                 (acc->width == 2 && (acc->addr & 0x1))) {
+                ERROR("vgicv3: missaligned access");
                 return false;
             }
             break;
@@ -897,6 +910,7 @@ bool vgicd_emul_handler(emul_access_t *acc)
                 /* Allow byte access or align 16-bit accesses */
                 if ((acc->width == 4 && (acc->addr & 0x3)) ||
                     (acc->width == 2 && (acc->addr & 0x1))) {
+                    ERROR("vgicv3: missaligned access");
                     return false;
                 }
             }
@@ -1427,6 +1441,14 @@ void vgicr_emul_icfgr_access(emul_access_t *acc)
     }
 }
 
+void vgicr_emul_id_access(emul_access_t *acc)
+{
+    if (!acc->write) {
+        vcpu_writereg(cpu.vcpu, acc->reg,
+                      gicr.ID[((acc->addr & 0xff) - 0xd0) / 4]);
+    }
+}
+
 bool vgicr_emul_handler(emul_access_t *acc)
 {
     if (acc->width > 4) return false;
@@ -1470,7 +1492,7 @@ bool vgicr_emul_handler(emul_access_t *acc)
     // spin_lock(&cpu.vcpu->vm->arch.vgicd.lock);
     /* LPI Related */
     if (!(acc->addr & 0x10000)) {
-        switch ((acc->addr & 0x1ffff)) {
+        switch ((acc->addr & 0xffff)) {
             case GICR_REG_OFF(CTLR):
                 vgicr_emul_ctlr_access(acc);
                 break;
@@ -1506,6 +1528,9 @@ bool vgicr_emul_handler(emul_access_t *acc)
                 break;
             case GICR_REG_OFF(SYNCR):
                 vgicr_emul_syncr_access(acc);
+                break;
+            default:
+                if (GICR_REG_GROUP(ID)) vgicr_emul_id_access(acc);
                 break;
         }
     } else {
