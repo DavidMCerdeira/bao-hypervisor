@@ -20,13 +20,9 @@
 #include <arch/vgic.h>
 #include <arch/psci.h>
 
-#define USE_GICV3
-
 typedef struct {
     vgicd_t vgicd;
-#ifdef USE_GICV3
-    vgicr_t vgicr;
-#endif
+    struct gic_dscrp* gic;
 } vm_arch_t;
 
 typedef struct {
@@ -39,8 +35,8 @@ struct arch_regs {
     uint64_t x[31];
     uint64_t elr_el2;
     uint64_t spsr_el2;
-} __attribute__((aligned(16))); // makes size always aligned to 16 to respect
-                                // stack alignment
+} __attribute__((aligned(16)));  // makes size always aligned to 16 to respect
+                                 // stack alignment
 
 vcpu_t* vm_get_vcpu_by_mpidr(vm_t* vm, uint64_t mpidr);
 void vcpu_arch_entry();

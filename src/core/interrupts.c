@@ -91,7 +91,7 @@ enum irq_res interrupts_handle(uint64_t int_id, uint64_t source)
 
 void interrupts_vm_assign(vm_t *vm, uint64_t id)
 {
-    if(interrupts_arch_conflict(global_interrupt_bitmap, id)) {
+    if (interrupts_arch_conflict(global_interrupt_bitmap, id)) {
         ERROR("Interrupts conflict, id = %d\n", id);
     }
 
