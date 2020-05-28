@@ -59,13 +59,14 @@ typedef struct vm {
 typedef struct vcpu {
     node_t node;
 
+    struct arch_regs* regs;
+    vcpu_arch_t arch;
+
     uint64_t id;
     uint32_t phys_id;
     bool active;
 
     vm_t* vm;
-    vcpu_arch_t arch;
-    struct arch_regs* regs;
 
     uint8_t stack[STACK_SIZE] __attribute__((aligned(STACK_SIZE)));
 } vcpu_t;
