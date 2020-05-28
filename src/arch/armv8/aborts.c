@@ -57,7 +57,6 @@ void aborts_data_lower(uint32_t iss, uint64_t far, uint64_t il)
             cpu.vcpu->regs->elr_el2 += pc_step;
         } else {
             ERROR("data abort emulation failed (0x%x)", far);
-
         }
     } else {
         ERROR("no emulation handler for abort(0x%x at 0x%x)", far,

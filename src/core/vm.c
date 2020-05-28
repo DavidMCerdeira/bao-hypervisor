@@ -227,17 +227,17 @@ void vm_init(vm_t* vm, const vm_config_t* config, bool master, uint64_t vm_id)
 
     cpu_sync_barrier(&vm->sync);
 
+    /*
+     *  Initialize each virtual core.
+     */
+    vm_vcpu_init(vm, config);
+
     /**
      * Perform architecture dependent initializations. This includes,
      * for example, setting the page table pointer and other virtualization
      * extensions specifics.
      */
     vm_arch_init(vm, config);
-
-    /*
-     *  Initialize each virtual core.
-     */
-    vm_vcpu_init(vm, config);
 
     /**
      * Create the VM's address space according to configuration and where
