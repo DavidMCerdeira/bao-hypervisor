@@ -44,6 +44,6 @@ struct platform_desc platform = {
     },
 
     .console = {
-        .base = 0xFF180000 /* UART 2 */
+        .base = 0xFF1A0000 /* UART 2 */
     },
 };
