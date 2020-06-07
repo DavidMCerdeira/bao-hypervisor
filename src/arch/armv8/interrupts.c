@@ -24,6 +24,10 @@
 #include <arch/sysregs.h>
 #include <vm.h>
 
+#ifndef GIC_VERSION
+#error "GIC_VERSION not defined for this platform"
+#endif
+
 void interrupts_arch_init()
 {
     gic_init();
@@ -32,22 +36,18 @@ void interrupts_arch_init()
 
 void interrupts_arch_ipi_send(uint64_t target_cpu, uint64_t ipi_id)
 {
-    if (ipi_id < GIC_MAX_SGIS) gicd_send_sgi(target_cpu, ipi_id);
-}
-
-void interrupts_arch_cpu_enable(bool en)
-{
-    if (en)
-        asm volatile("msr DAIFClr, %0\n" ::"I"(PSTATE_DAIF_I_BIT));
-    else
-        asm volatile("msr DAIFSet, %0\n" ::"I"(PSTATE_DAIF_I_BIT));
+    if (ipi_id < GIC_MAX_SGIS) gic_send_sgi(target_cpu, ipi_id);
 }
 
 void interrupts_arch_enable(uint64_t int_id, bool en)
 {
     gic_set_enable(int_id, en);
-    gic_set_prio(int_id, 0x7F);
-    gic_set_route(int_id, cpu.id);
+    gic_set_prio(int_id, 0x01);
+    if (GIC_VERSION == GICV2) {
+        gic_set_trgt(int_id, 1 << cpu.id);
+    } else {
+        gic_set_route(int_id, cpu.arch.mpidr);
+    }
 }
 
 bool interrupts_arch_check(uint64_t int_id)
@@ -70,7 +70,7 @@ void interrupts_arch_vm_assign(vm_t *vm, uint64_t id)
     vgic_set_hw(vm, id);
 }
 
-void interrupts_arch_vm_inject(vm_t *vm, uint64_t id, uint64_t source)
+void interrupts_arch_vm_inject(vm_t *vm, uint64_t id)
 {
-    vgic_inject(&vm->arch.vgicd, id, source);
+    vgic_inject(&vm->arch.vgicd, id);
 }

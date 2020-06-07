@@ -562,12 +562,12 @@ void vgicd_emul_pendr_access(emul_access_t *acc, bool set)
     }
 }
 
-inline void vgicd_emul_ispendr_access(emul_access_t *acc)
+static inline void vgicd_emul_ispendr_access(emul_access_t *acc)
 {
     vgicd_emul_pendr_access(acc, true);
 }
 
-inline void vgicd_emul_icpendr_access(emul_access_t *acc)
+static inline void vgicd_emul_icpendr_access(emul_access_t *acc)
 {
     vgicd_emul_pendr_access(acc, false);
 }
@@ -715,11 +715,10 @@ void vgicd_set_trgt(vcpu_t *vcpu, uint64_t int_id, uint8_t trgt)
     spin_lock(&interrupt->lock);
     if (vgic_get_ownership(vcpu, interrupt)) {
         if (interrupt->targets != trgt) {
+            vgic_remove_lr(vcpu, interrupt);
             interrupt->targets = trgt;
             if (interrupt->hw) gicd_set_trgt(interrupt->id, trgt);
-            if (vgic_get_state(interrupt) != INV) {
-                vgic_route(vcpu, interrupt);
-            }
+            vgic_route(vcpu, interrupt);
         }
         vgic_yield_ownership(vcpu, interrupt);
     } else {
@@ -923,7 +922,7 @@ bool vgicd_emul_handler(emul_access_t *acc)
     return true;
 }
 
-void vgicd_inject(vgicd_t *vgicd, uint64_t id, uint64_t source)
+void vgic_inject(vgicd_t *vgicd, uint64_t id)
 {
     vgic_int_t *interrupt = vgic_get_int(cpu.vcpu, id & 0x3ff);
 
@@ -1108,7 +1107,7 @@ void vgic_handle_trapped_eoir(vcpu_t *vcpu)
     }
 }
 
-void gic_maintenance_handler(uint64_t arg, uint64_t source)
+void gic_maintenance_handler(uint64_t arg)
 {
     uint32_t misr = gich.MISR;
 
@@ -1154,12 +1153,12 @@ void vgic_init(vm_t *vm, const struct gic_dscrp *gic_dscrp)
         vm->arch.vgicd.interrupts[i].lock = 0;
     }
 
-    emul_region_t emu = {.va_base = gic_dscrp->gicd_addr,
+    emul_mem_t emu = {.va_base = gic_dscrp->gicd_addr,
                          .pa_base = (uint64_t)&gicd,
                          .size = ALIGN(sizeof(gicd_t), PAGE_SIZE),
                          .handler = vgicd_emul_handler};
 
-    vm_add_emul(vm, &emu);
+    vm_emul_add_mem(vm, &emu);
 }
 
 void vgic_cpu_init(vcpu_t *vcpu)

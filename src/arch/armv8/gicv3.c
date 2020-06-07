@@ -15,7 +15,6 @@
  */
 
 #include <arch/gic.h>
-#include <arch/sysregs.h>
 #include <cpu.h>
 #include <mem.h>
 #include <platform.h>
@@ -23,8 +22,7 @@
 #include <fences.h>
 
 volatile gicd_t gicd __attribute__((section(".devices")));
-/* let's consider cpus for now */
-volatile gicr_t gicr[8] __attribute__((section(".cpu_private_devices")));
+volatile gicr_t *gicr;
 
 static spinlock_t gicd_lock;
 static spinlock_t gicr_lock;
@@ -33,117 +31,51 @@ uint64_t NUM_LRS;
 
 static inline uint64_t gich_num_lrs()
 {
-    return ((MRS(ICH_VTR_EL2) & GICH_VTR_MSK) >> GICH_VTR_OFF) + 1;
+    return ((MRS(ICH_VTR_EL2) & ICH_VTR_MSK) >> ICH_VTR_OFF) + 1;
 }
 
-inline uint32_t gich_read_lr(size_t i)
+inline uint64_t gich_read_lr(size_t i)
 {
-    uint32_t val = 0;
-
     switch (i) {
-        case 0:
-            val = MRS(ICH_LR0_EL2);
-            break;
-        case 1:
-            val = MRS(ICH_LR1_EL2);
-            break;
-        case 2:
-            val = MRS(ICH_LR2_EL2);
-            break;
-        case 3:
-            val = MRS(ICH_LR3_EL2);
-            break;
-        case 4:
-            val = MRS(ICH_LR4_EL2);
-            break;
-        case 5:
-            val = MRS(ICH_LR5_EL2);
-            break;
-        case 6:
-            val = MRS(ICH_LR6_EL2);
-            break;
-        case 7:
-            val = MRS(ICH_LR7_EL2);
-            break;
-        case 8:
-            val = MRS(ICH_LR8_EL2);
-            break;
-        case 9:
-            val = MRS(ICH_LR9_EL2);
-            break;
-        case 10:
-            val = MRS(ICH_LR10_EL2);
-            break;
-        case 11:
-            val = MRS(ICH_LR11_EL2);
-            break;
-        case 12:
-            val = MRS(ICH_LR12_EL2);
-            break;
-        case 13:
-            val = MRS(ICH_LR13_EL2);
-            break;
-        case 14:
-            val = MRS(ICH_LR14_EL2);
-            break;
-        case 15:
-            val = MRS(ICH_LR15_EL2);
-            break;
+        case  0: return MRS(ICH_LR0_EL2);
+        case  1: return MRS(ICH_LR1_EL2);
+        case  2: return MRS(ICH_LR2_EL2);
+        case  3: return MRS(ICH_LR3_EL2);
+        case  4: return MRS(ICH_LR4_EL2);
+        case  5: return MRS(ICH_LR5_EL2);
+        case  6: return MRS(ICH_LR6_EL2);
+        case  7: return MRS(ICH_LR7_EL2);
+        case  8: return MRS(ICH_LR8_EL2);
+        case  9: return MRS(ICH_LR9_EL2);
+        case 10: return MRS(ICH_LR10_EL2);
+        case 11: return MRS(ICH_LR11_EL2);
+        case 12: return MRS(ICH_LR12_EL2);
+        case 13: return MRS(ICH_LR13_EL2);
+        case 14: return MRS(ICH_LR14_EL2);
+        case 15: return MRS(ICH_LR15_EL2);
+        default: return -1;
     }
-    return val;
 }
 
-inline void gich_write_lr(size_t i, uint32_t val)
+inline void gich_write_lr(size_t i, uint64_t val)
 {
     switch (i) {
-        case 0:
-            MSR(ICH_LR0_EL2, val);
-            break;
-        case 1:
-            MSR(ICH_LR1_EL2, val);
-            break;
-        case 2:
-            MSR(ICH_LR2_EL2, val);
-            break;
-        case 3:
-            MSR(ICH_LR3_EL2, val);
-            break;
-        case 4:
-            MSR(ICH_LR4_EL2, val);
-            break;
-        case 5:
-            MSR(ICH_LR5_EL2, val);
-            break;
-        case 6:
-            MSR(ICH_LR6_EL2, val);
-            break;
-        case 7:
-            MSR(ICH_LR7_EL2, val);
-            break;
-        case 8:
-            MSR(ICH_LR8_EL2, val);
-            break;
-        case 9:
-            MSR(ICH_LR9_EL2, val);
-            break;
-        case 10:
-            MSR(ICH_LR10_EL2, val);
-            break;
-        case 11:
-            MSR(ICH_LR11_EL2, val);
-            break;
-        case 12:
-            MSR(ICH_LR12_EL2, val);
-            break;
-        case 13:
-            MSR(ICH_LR13_EL2, val);
-            break;
-        case 14:
-            MSR(ICH_LR14_EL2, val);
-            break;
-        case 15:
-            MSR(ICH_LR15_EL2, val);
-            break;
+        case 0: MSR(ICH_LR0_EL2, val); break;
+        case 1: MSR(ICH_LR1_EL2, val); break;
+        case 2: MSR(ICH_LR2_EL2, val); break;
+        case 3: MSR(ICH_LR3_EL2, val); break;
+        case 4: MSR(ICH_LR4_EL2, val); break;
+        case 5: MSR(ICH_LR5_EL2, val); break;
+        case 6: MSR(ICH_LR6_EL2, val); break;
+        case 7: MSR(ICH_LR7_EL2, val); break;
+        case 8: MSR(ICH_LR8_EL2, val); break;
+        case 9: MSR(ICH_LR9_EL2, val); break;
+        case 10: MSR(ICH_LR10_EL2, val); break;
+        case 11: MSR(ICH_LR11_EL2, val); break;
+        case 12: MSR(ICH_LR12_EL2, val); break;
+        case 13: MSR(ICH_LR13_EL2, val); break;
+        case 14: MSR(ICH_LR14_EL2, val); break;
+        case 15: MSR(ICH_LR15_EL2, val); break;
     }
 }
 
@@ -157,18 +89,15 @@ static inline void gicc_init()
         gich_write_lr(i, 0);
     }
 
-    MSR(ICC_PMR_EL1, -1);
-    MSR(ICC_CTLR_EL1, GICC_CTLR_EN_BIT | GICC_CTLR_EOImodeNS_BIT);
-    MSR(ICH_HCR_EL2, MRS(ICH_HCR_EL2) | GICH_HCR_LRENPIE_BIT);
+    MSR(ICC_PMR_EL1, GIC_LOWEST_PRIO);
+    MSR(ICC_BPR1_EL1, 0x0);         
+    MSR(ICC_CTLR_EL1, ICC_CTLR_EOIMode_BIT);
+    MSR(ICH_HCR_EL2, MRS(ICH_HCR_EL2) | ICH_HCR_LRENPIE_BIT | ICH_HCR_VGrp1EIE_BIT);
     MSR(ICC_IGRPEN1_EL1, ICC_IGRPEN_EL1_ENB_BIT);
 }
 
 static inline void gicr_init()
 {
-    mem_map_dev(&cpu.as, (void *)&gicr[cpu.id],
-                platform.arch.gic.gicr_addr + (cpu.id * sizeof(gicr[0])),
-                NUM_PAGES(sizeof(gicr[0])));
-
     gicr[cpu.id].ICENABLER0 = -1;
     gicr[cpu.id].ICPENDR0 = -1;
     gicr[cpu.id].ICACTIVER0 = -1;
@@ -182,9 +111,7 @@ void gicc_save_state(gicc_state_t *state)
 {
     state->CTLR = MRS(ICC_CTLR_EL1);
     state->PMR = MRS(ICC_PMR_EL1);
-    state->IAR = MRS(ICC_IAR1_EL1);
     state->BPR = MRS(ICC_BPR1_EL1);
-    state->EOIR = MRS(ICC_EOIR1_EL1);
     state->RPR = MRS(ICC_RPR_EL1);
     state->HPPIR = MRS(ICC_HPPIR1_EL1);
     state->priv_ISENABLER = gicr[cpu.id].ISENABLER0;
@@ -204,8 +131,6 @@ void gicc_restore_state(gicc_state_t *state)
     MSR(ICC_CTLR_EL1, state->CTLR);
     MSR(ICC_PMR_EL1, state->PMR);
     MSR(ICC_BPR1_EL1, state->BPR);
-    MSR(ICC_EOIR1_EL1, state->EOIR);
-    MSR(ICC_IAR1_EL1, state->IAR);
     MSR(ICC_RPR_EL1, state->RPR);
     MSR(ICC_HPPIR1_EL1, state->HPPIR);
     gicr[cpu.id].ISENABLER0 = state->priv_ISENABLER;
@@ -228,9 +153,6 @@ void gic_cpu_init()
 
 void gicd_init()
 {
-    mem_map_dev(&cpu.as, (void *)&gicd, platform.arch.gic.gicd_addr,
-                NUM_PAGES(sizeof(gicd)));
-
     size_t int_num = gic_num_irqs();
 
     /* Bring distributor to known state */
@@ -245,12 +167,12 @@ void gicd_init()
     }
 
     /* All interrupts have lowest priority possible by default */
-    for (int i = GIC_CPU_PRIV; i < GIC_NUM_PRIO_REGS(int_num); i++)
+    for (int i = GIC_NUM_PRIO_REGS(GIC_CPU_PRIV); i < GIC_NUM_PRIO_REGS(int_num); i++)
         gicd.IPRIORITYR[i] = -1;
 
-    /* No CPU targets for any interrupt by default */
-    for (int i = GIC_CPU_PRIV; i < GIC_NUM_TARGET_REGS(int_num); i++)
-        gicd.ITARGETSR[i] = 0;
+    for (int i = GIC_CPU_PRIV; i < GIC_MAX_INTERUPTS; i++) {
+        gicd.IROUTER[i] = GICD_IROUTER_INV;
+    }
 
     /* ICFGR are platform dependent, lets leave them as is */
 
@@ -265,34 +187,34 @@ void gicd_init()
 
 void gic_init()
 {
-    gic_cpu_init();
-
     if (cpu.id == CPU_MASTER) {
+        mem_map_dev(&cpu.as, (void *)&gicd, platform.arch.gic.gicd_addr,
+                NUM_PAGES(sizeof(gicd)));
+        size_t gicr_size = NUM_PAGES(sizeof(gicr_t)) * platform.cpu_num;
+        gicr = (gicr_t*) mem_alloc_vpage(&cpu.as, SEC_HYP_GLOBAL, NULL, gicr_size); 
+        mem_map_dev(&cpu.as, (void*) gicr, platform.arch.gic.gicr_addr, gicr_size);       
         gicd_init();
         NUM_LRS = gich_num_lrs();
     }
+
+    cpu_sync_barrier(&cpu_glb_sync);
+
+    gic_cpu_init();
 
     cpu_sync_barrier(&cpu_glb_sync);
 }
 
 void gic_handle()
 {
-    uint64_t ack = MRS(ICC_IAR1_EL1);
-    uint64_t id = bit_extract(ack, 0, 24);
+    uint64_t id = MRS(ICC_IAR1_EL1);
 
-    if (id >= 1022) return;
+    if (id >= GIC_FIRST_SPECIAL_INTID) return;
+    
+    enum irq_res res = interrupts_handle(id);
 
-    enum irq_res res = interrupts_handle(id, 0);
+    MSR(ICC_EOIR1_EL1, id);
 
-    MSR(ICC_EOIR1_EL1, ack);
-
-    if (res == HANDLED_BY_HYP) MSR(ICC_DIR_EL1, ack);
-}
-
-void gicd_send_sgi(uint64_t cpu_target, uint64_t sgi_num)
-{
-    gicd.SGIR = (1UL << (GICD_SGIR_CPUTRGLST_OFF + cpu_target)) |
-                (sgi_num & GICD_SGIR_SGIINTID_MSK);
+    if (res == HANDLED_BY_HYP) MSR(ICC_DIR_EL1, id);
 }
 
 uint64_t gicd_get_prio(uint64_t int_id)
@@ -356,18 +278,8 @@ static void gicd_set_pend(uint64_t int_id, bool pend)
 {
     spin_lock(&gicd_lock);
 
-    if (gic_is_sgi(int_id)) {
-        uint64_t reg_ind = GICD_SGI_REG(int_id);
-        uint64_t off = GICD_SGI_OFF(int_id);
-
-        if (pend) {
-            gicd.SPENDSGIR[reg_ind] = (1U) << (off + cpu.id);
-        } else {
-            gicd.CPENDSGIR[reg_ind] = BIT_MASK(off, 8);
-        }
-    } else {
+    if (!gic_is_priv(int_id)) {
         uint64_t reg_ind = GIC_INT_REG(int_id);
-
         if (pend) {
             gicd.ISPENDR[reg_ind] = GIC_INT_MASK(int_id);
         } else {
@@ -413,11 +325,15 @@ void gicd_set_trgt(uint64_t int_id, uint8_t trgt)
     spin_unlock(&gicd_lock);
 }
 
-void gicd_set_route(uint64_t int_id, uint8_t trgt)
+void gicd_set_route(uint64_t int_id, uint64_t route)
 {
     if (gic_is_priv(int_id)) return;
 
-    gicd.IROUTER[int_id] = trgt;
+    spin_lock(&gicd_lock);
+
+    gicd.IROUTER[int_id] = route;
+
+    spin_unlock(&gicd_lock);
 }
 
 void gicd_set_enable(uint64_t int_id, bool en)
@@ -431,11 +347,6 @@ void gicd_set_enable(uint64_t int_id, bool en)
     else
         gicd.ICENABLER[reg_ind] = bit;
     spin_unlock(&gicd_lock);
-}
-
-void gicr_send_sgi(uint64_t cpu_target, uint64_t sgi_num)
-{
-    MSR(ICC_SGI1R_EL1, (1UL << cpu_target) | (sgi_num) << 24);
 }
 
 void gicr_set_prio(uint64_t int_id, uint8_t prio, uint32_t gicr_id)
@@ -469,11 +380,11 @@ uint64_t gicr_get_prio(uint64_t int_id, uint32_t gicr_id)
 
 void gicr_set_icfgr(uint64_t int_id, uint8_t cfg, uint32_t gicr_id)
 {
-    spin_lock(&gicr_lock);
-
     uint64_t reg_ind = (int_id * GIC_CONFIG_BITS) / (sizeof(uint32_t) * 8);
     uint64_t off = (int_id * GIC_CONFIG_BITS) % (sizeof(uint32_t) * 8);
     uint64_t mask = ((1U << GIC_CONFIG_BITS) - 1) << off;
+    
+    spin_lock(&gicr_lock);
 
     if (reg_ind == 0) {
         gicr[gicr_id].ICFGR0 =
@@ -530,18 +441,6 @@ void gicr_set_state(uint64_t int_id, enum int_state state, uint32_t gicr_id)
     gicr_set_pend(int_id, state & PEND, gicr_id);
 }
 
-void gicr_set_trgt(uint64_t int_id, uint8_t trgt, uint32_t gicr_id)
-{
-    spin_lock(&gicr_lock);
-
-    spin_unlock(&gicr_lock);
-}
-
-void gicr_set_route(uint64_t int_id, uint8_t trgt, uint32_t gicr_id)
-{
-    gicr_set_trgt(int_id, trgt, gicr_id);
-}
-
 void gicr_set_enable(uint64_t int_id, bool en, uint32_t gicr_id)
 {
     uint64_t bit = GIC_INT_MASK(int_id);
@@ -554,27 +453,20 @@ void gicr_set_enable(uint64_t int_id, bool en, uint32_t gicr_id)
     spin_unlock(&gicr_lock);
 }
 
-static bool irq_in_gicd(uint64_t int_id)
-{
-    if (int_id > 32 && int_id < 1025) return true;
-
-    if (int_id < 32 && !(gicd.CTLR & GICD_CTLR_ARE_NS_BIT)) return true;
-
-    return false;
-}
-
 void gic_send_sgi(uint64_t cpu_target, uint64_t sgi_num)
 {
-    if (irq_in_gicd(sgi_num)) {
-        return gicd_send_sgi(cpu_target, sgi_num);
-    } else {
-        return gicr_send_sgi(cpu_target, sgi_num);
-    }
+    if (sgi_num >= GIC_MAX_SGIS) return;
+
+    uint64_t sgi = (cpu_id_to_mpidr(cpu_target) & ~ICC_SGIR_TRGLSTFLT_MSK) |
+                   (1UL << (cpu_target & ICC_SGIR_TRGLSTFLT_MSK)) | 
+                   (sgi_num << ICC_SGIR_SGIINTID_OFF);
+                   
+    MSR(ICC_SGI1R_EL1, sgi);
 }
 
 void gic_set_prio(uint64_t int_id, uint8_t prio)
 {
-    if (irq_in_gicd(int_id)) {
+    if (!gic_is_priv(int_id)) {
         return gicd_set_prio(int_id, prio);
     } else {
         return gicr_set_prio(int_id, prio, cpu.id);
@@ -583,7 +475,7 @@ void gic_set_prio(uint64_t int_id, uint8_t prio)
 
 uint64_t gic_get_prio(uint64_t int_id)
 {
-    if (irq_in_gicd(int_id)) {
+    if (!gic_is_priv(int_id)) {
         return gicd_get_prio(int_id);
     } else {
         return gicr_get_prio(int_id, cpu.id);
@@ -592,7 +484,7 @@ uint64_t gic_get_prio(uint64_t int_id)
 
 void gic_set_icfgr(uint64_t int_id, uint8_t cfg)
 {
-    if (irq_in_gicd(int_id)) {
+    if (!gic_is_priv(int_id)) {
         return gicd_set_icfgr(int_id, cfg);
     } else {
         return gicr_set_icfgr(int_id, cfg, cpu.id);
@@ -601,16 +493,16 @@ void gic_set_icfgr(uint64_t int_id, uint8_t cfg)
 
 enum int_state gic_get_state(uint64_t int_id)
 {
-    if (irq_in_gicd(int_id)) {
+    if (!gic_is_priv(int_id)) {
         return gicd_get_state(int_id);
     } else {
         return gicr_get_state(int_id, cpu.id);
     }
 }
 
-static void gic_set_pend(uint64_t int_id, bool pend)
+void gic_set_pend(uint64_t int_id, bool pend)
 {
-    if (irq_in_gicd(int_id)) {
+    if (!gic_is_priv(int_id)) {
         return gicd_set_pend(int_id, pend);
     } else {
         return gicr_set_pend(int_id, pend, cpu.id);
@@ -619,7 +511,7 @@ static void gic_set_pend(uint64_t int_id, bool pend)
 
 void gic_set_act(uint64_t int_id, bool act)
 {
-    if (irq_in_gicd(int_id)) {
+    if (!gic_is_priv(int_id)) {
         return gicd_set_act(int_id, act);
     } else {
         return gicr_set_act(int_id, act, cpu.id);
@@ -628,37 +520,25 @@ void gic_set_act(uint64_t int_id, bool act)
 
 void gic_set_state(uint64_t int_id, enum int_state state)
 {
-    if (irq_in_gicd(int_id)) {
+    if (!gic_is_priv(int_id)) {
         return gicd_set_state(int_id, state);
     } else {
         return gicr_set_state(int_id, state, cpu.id);
     }
 }
 
-void gic_set_trgt(uint64_t int_id, uint8_t trgt)
+void gic_set_route(uint64_t int_id, uint64_t router)
 {
-    if (irq_in_gicd(int_id)) {
-        return gicd_set_trgt(int_id, trgt);
-    } else {
-        return gicr_set_trgt(int_id, trgt, cpu.id);
-    }
-}
-
-void gic_set_route(uint64_t int_id, uint8_t trgt)
-{
-    if (irq_in_gicd(int_id)) {
-        return gicd_set_route(int_id, trgt);
-    } else {
-        return gicr_set_route(int_id, trgt, cpu.id);
+    if (!gic_is_priv(int_id)) {
+        return gicd_set_route(int_id, router);
     }
 }
 
 void gic_set_enable(uint64_t int_id, bool en)
 {
-    if (irq_in_gicd(int_id)) {
+    if (!gic_is_priv(int_id)) {
         return gicd_set_enable(int_id, en);
     } else {
         return gicr_set_enable(int_id, en, cpu.id);
     }
 }
-

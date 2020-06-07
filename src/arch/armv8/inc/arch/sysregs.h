@@ -33,11 +33,10 @@
 /* MPIDR_EL1, Multiprocessor Affinity Register */
 
 #define MPIDR_RES1 (0x80000000)
-#define MPIDR_CPU_MASK MPIDR_AFFLVL_MASK
-#define MPIDR_CLUSTER_MASK (MPIDR_AFFLVL_MASK << MPIDR_AFFINITY_BITS)
+#define MPIDR_RES0_MSK  ~((0xffffffull << 49) | (0x1full << 25))
 #define MPIDR_AFFINITY_BITS (8)
-#define MPIDR_AFFLVL_MASK (0xff)
 #define MPIDR_U_BIT (1UL << 30)
+#define MPIDR_AFF_MSK (0xffff) //we are only supporting 2 affinity levels
 
 /* SPSR - Saved Program Status Register */
 
@@ -343,6 +342,7 @@
 #define ESR_EC_SVC64 (0x15)
 #define ESR_EC_HVC64 (0x16)
 #define ESR_EC_SMC64 (0x17)
+#define ESR_EC_SYSRG (0x18)
 #define ESR_EC_IALEL (0x20)
 #define ESR_EC_IASEL (0x21)
 #define ESR_EC_PCALG (0x22)
@@ -386,6 +386,11 @@
 #define ESR_ISS_DA_DSFC_ACCESS (0x8)
 #define ESR_ISS_DA_DSFC_PERMIS (0xC)
 
+#define ESR_ISS_SYSREG_ADDR ((0xfff << 10) | (0xf << 1))
+#define ESR_ISS_SYSREG_DIR (0x1)
+#define ESR_ISS_SYSREG_REG_OFF (5)
+#define ESR_ISS_SYSREG_REG_LEN (5)
+
 /* VTTBR_EL2, Virtualization Translation Table Base Register */
 
 #define VTTBR_VMID_OFF 48
@@ -402,7 +407,7 @@
 #define ICC_HPPIR0_EL1      S3_0_C12_C8_2        
 #define ICC_BPR0_EL1        S3_0_C12_C8_3        
 // #define ICC_AP0R<n>_EL1     S3_0_C12_C8_        
-// #define ICC_AP1R<n>_EL1     S3_0_C12_C9_        
+#define ICC_AP1R_EL1(N)     S3_0_C12_C9_ ## N        
 #define ICC_DIR_EL1         S3_0_C12_C11_1    
 #define ICC_RPR_EL1         S3_0_C12_C11_3    
 #define ICC_SGI1R_EL1       S3_0_C12_C11_5        
@@ -464,6 +469,13 @@
 })
 
 #define MSR(reg, var) asm volatile("msr " STR(reg)  ", %0\n\r" ::"r"(var))
+
+#define SYSREG_ENC_ADDR(Op0, Op1, CRn, CRm, Op2) \
+    ((((Op0) & 0x3) << 20) | \
+    (((Op2) & 0x7) << 17) | \
+    (((Op1) & 0x7) << 14) | \
+    (((CRn) & 0xf) << 10) | \
+    (((CRm) & 0xf) << 1))
 
 #endif /* |__ASSEMBLER__ */
 

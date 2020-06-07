@@ -21,7 +21,12 @@
 #include <emul.h>
 #include <bitmap.h>
 #include <spinlock.h>
+#include <arch/sysregs.h>
 
+#define GICV2 (2)
+#define GICV3 (3)
+
+#define GIC_FIRST_SPECIAL_INTID (1020)
 #define GIC_MAX_INTERUPTS 1024
 #define GIC_MAX_SGIS 16
 #define GIC_MAX_PPIS 16
@@ -33,6 +38,8 @@
 #define GIC_CONFIG_BITS 2
 #define GIC_SEC_BITS 2
 #define GIC_SGI_BITS 8
+#define GICD_IROUTER_INV (~MPIDR_AFF_MSK)
+#define GIC_LOWEST_PRIO (0xff)
 
 #define GIC_INT_REG(NINT) (NINT / (sizeof(uint32_t) * 8))
 #define GIC_INT_MASK(NINT) (1U << NINT % (sizeof(uint32_t) * 8))
@@ -76,15 +83,14 @@
 #define GICD_TYPER_SECUREXT_BIT (1UL << 10)
 #define GICD_TYPER_LSPI_OFF (11)
 #define GICD_TYPER_LSPI_LEN (6)
-
-/* Software Generated Interrupt Register, GICD_SGIR */
-
 #define GICD_TYPER_ITLN_OFF 0
 #define GICD_TYPER_ITLN_LEN 5
 #define GICD_TYPER_ITLN_MSK BIT_MASK(GICD_TYPER_ITLN_OFF, GICD_TYPER_ITLN_LEN)
 #define GICD_TYPER_CPUN_OFF 5
 #define GICD_TYPER_CPUN_LEN 3
 #define GICD_TYPER_CPUN_MSK BIT_MASK(GICD_TYPER_CPUN_OFF, GICD_TYPER_CPUN_LEN)
+
+/* Software Generated Interrupt Register, GICD_SGIR */
 
 #define GICD_SGIR_SGIINTID_OFF 0
 #define GICD_SGIR_SGIINTID_LEN 4
@@ -100,6 +106,12 @@
 #define GICD_SGIR_TRGLSTFLT_LEN 2
 #define GICD_SGIR_TRGLSTFLT(sgir) \
     bit_extract(sgir, GICD_SGIR_TRGLSTFLT_OFF, GICD_SGIR_TRGLSTFLT_LEN)
+
+/*  Interrupt Routing Registers, GICD_IROUTER */
+
+#define GICD_IROUTER_RES0_MSK ((1ULL << 40)-1)
+#define GICD_IROUTER_IRM_BIT (1ULL << 31)
+#define GICD_IROUTER_AFF_MSK (GICD_IROUTER_RES0_MSK & ~GICD_IROUTER_IRM_BIT)
 
 typedef struct {
     uint32_t CTLR;
@@ -142,8 +154,13 @@ typedef struct {
 /* Redistributor Wake Register, GICD_WAKER */
 
 #define GICR_CTRL_DS_BIT (1 << 6)
-#define GICR_ProcessorSleep_BIT (0x2)
-#define GICR_ChildrenASleep_BIT (0x4)
+#define GICR_CTRL_DS_DPG1NS (1 << 25)
+#define GICR_TYPER_LAST_OFF (4)
+#define GICR_TYPER_PRCNUM_OFF (8)
+#define GICR_TYPER_AFFVAL_OFF (32)
+#define GICR_WAKER_ProcessorSleep_BIT (0x2)
+#define GICR_WAKER_ChildrenASleep_BIT (0x4)
+
 typedef struct {
     /* RD_base frame */
     uint32_t CTLR;
@@ -205,6 +222,24 @@ typedef struct {
 #define GICC_IAR_CPU_LEN (3)
 #define GICC_IAR_CPU_MSK (BIT_MASK(GICC_IAR_CPU_OFF, GICC_IAR_CPU_LEN))
 
+#define ICC_CTLR_EOIMode_BIT (0x1ULL << 1)
+#define ICC_SGIR_SGIINTID_OFF 24
+#define ICC_SGIR_SGIINTID_LEN 4
+#define ICC_SGIR_SGIINTID(sgir) \
+    bit_extract(sgir, ICC_SGIR_SGIINTID_OFF, ICC_SGIR_SGIINTID_LEN)
+#define ICC_SGIR_IRM_BIT (1ull << 40)
+#define ICC_SGIR_TRGLSTFLT_OFF 0
+#define ICC_SGIR_TRGLSTFLT_LEN 16 
+#define ICC_SGIR_TRGLSTFLT_MSK BIT_MASK(ICC_SGIR_TRGLSTFLT_OFF, ICC_SGIR_TRGLSTFLT_LEN)
+#define ICC_SGIR_TRGLSTFLT(sgir) \
+    bit_extract(sgir, ICC_SGIR_TRGLSTFLT_OFF, ICC_SGIR_TRGLSTFLT_LEN)
+
+#define ICC_SRE_ENB_BIT  (0x8)
+#define ICC_SRE_DIB_BIT  (0x4)
+#define ICC_SRE_DFB_BIT  (0x2)
+#define ICC_SRE_SRE_BIT  (0x1)
+#define ICC_IGRPEN_EL1_ENB_BIT (0x1)
+
 typedef struct {
     uint32_t CTLR;
     uint32_t PMR;
@@ -239,9 +274,16 @@ typedef struct {
 #define GICH_HCR_EOICount_MASK \
     BIT_MASK(GICH_HCR_EOICount_OFF, GICH_HCR_EOICount_LEN)
 
+#define ICH_HCR_VGrp1EIE_BIT (1ULL << 6)
+#define ICH_HCR_LRENPIE_BIT GICH_HCR_LRENPIE_BIT
+
 #define GICH_VTR_OFF (0)
 #define GICH_VTR_LEN (6)
 #define GICH_VTR_MSK BIT_MASK(GICH_VTR_OFF, GICH_VTR_LEN)
+
+#define ICH_VTR_OFF GICH_VTR_OFF 
+#define ICH_VTR_LEN GICH_VTR_LEN 
+#define ICH_VTR_MSK GICH_VTR_MSK 
 
 #define GICH_LR_VID_OFF (0)
 #define GICH_LR_VID_LEN (10)
@@ -343,7 +385,7 @@ extern uint64_t NUM_LRS;
 
 void gic_init();
 void gic_cpu_init();
-void gicd_send_sgi(uint64_t cpu_target, uint64_t sgi_num);
+void gic_send_sgi(uint64_t cpu_target, uint64_t sgi_num);
 
 void gicc_save_state(gicc_state_t *state);
 void gicc_restore_state(gicc_state_t *state);
@@ -354,7 +396,7 @@ void gic_set_icfgr(uint64_t int_id, uint8_t cfg);
 void gic_set_act(uint64_t int_id, bool act);
 void gic_set_state(uint64_t int_id, enum int_state state);
 void gic_set_trgt(uint64_t int_id, uint8_t trgt);
-void gic_set_route(uint64_t int_id, uint8_t trgt);
+void gic_set_route(uint64_t int_id, uint64_t route);
 uint64_t gic_get_prio(uint64_t int_id);
 enum int_state gic_get_state(uint64_t int_id);
 
@@ -363,8 +405,6 @@ void gicd_set_prio(uint64_t int_id, uint8_t prio);
 void gicd_set_icfgr(uint64_t int_id, uint8_t cfg);
 void gicd_set_act(uint64_t int_id, bool act);
 void gicd_set_state(uint64_t int_id, enum int_state state);
-void gicd_set_trgt(uint64_t int_id, uint8_t trgt);
-void gicd_set_route(uint64_t int_id, uint8_t trgt);
 uint64_t gicd_get_prio(uint64_t int_id);
 enum int_state gicd_get_state(uint64_t int_id);
 
@@ -373,15 +413,16 @@ void gicr_set_prio(uint64_t int_id, uint8_t prio, uint32_t gicr_id);
 void gicr_set_icfgr(uint64_t int_id, uint8_t cfg, uint32_t gicr_id);
 void gicr_set_act(uint64_t int_id, bool act, uint32_t gicr_id);
 void gicr_set_state(uint64_t int_id, enum int_state state, uint32_t gicr_id);
-void gicr_set_trgt(uint64_t int_id, uint8_t trgt, uint32_t gicr_id);
-void gicr_set_route(uint64_t int_id, uint8_t trgt, uint32_t gicr_id);
 uint64_t gicr_get_prio(uint64_t int_id, uint32_t gicr_id);
 enum int_state gicr_get_state(uint64_t int_id, uint32_t gicr_id);
 
-uint32_t gich_read_lr(size_t i);
-void gich_write_lr(size_t i, uint32_t val);
+uint64_t gich_read_lr(size_t i);
+void gich_write_lr(size_t i, uint64_t val);
 
-void gic_maintenance_handler(uint64_t arg, uint64_t source);
+void gic_maintenance_handler(uint64_t arg);
+
+extern volatile gicd_t gicd;
+extern volatile gicr_t *gicr;
 
 static inline uint64_t gic_num_irqs()
 {
