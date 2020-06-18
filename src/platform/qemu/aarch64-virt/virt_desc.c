@@ -17,12 +17,12 @@
 
 struct platform_desc platform = {
 
-    .cpu_num = 4,
+    .cpu_num = 2,
     .region_num = 1,
     .regions =  (struct mem_region[]) {
         {
             .base = 0x40000000,
-            .size = 0x60000000, /* 1.5GB */
+            .size = 0x40000000 
         }
     },
 
@@ -36,7 +36,8 @@ struct platform_desc platform = {
             .gicc_addr = 0x08010000,
             .gich_addr = 0x08030000,
             .gicv_addr = 0x08040000,
-            .maintenance_id = 25, 
+            .gicr_addr = 0x080A0000,
+            .maintenance_id = 25
         },
     }
 

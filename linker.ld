@@ -94,6 +94,11 @@ SECTIONS
 		*(.cpu_private)
 	}
 
+	.cpu_private_devices _cpu_priv_device_addr (NOLOAD) : ALIGN(PAGE_SIZE) {
+		*(.cpu_private_devices)
+	}
+        _cpu_priv_device_addr = BAO_VM_BASE - SIZEOF(.cpu_private_devices);
+
 	. = BAO_VM_BASE;
 	_cpu_private_end = ABSOLUTE(.);
 	_vm_beg = ABSOLUTE(.);
