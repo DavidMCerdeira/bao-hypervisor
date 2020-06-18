@@ -1253,6 +1253,14 @@ bool vgic_icc_sgir_handler(emul_access_t *acc)
     return true;
 }
 
+bool vgic_icc_sre_handler(emul_access_t *acc)
+{
+    if(!acc->write){
+	    vcpu_writereg(cpu.vcpu, acc->reg, 0x1);
+    }
+    return true;
+}
+
 void vgic_inject(vgicd_t *vgicd, uint64_t id)
 {
     vgic_int_t *interrupt = vgic_get_int(cpu.vcpu, id & 0x3ff, cpu.vcpu->id);
@@ -1475,7 +1483,8 @@ void vgic_init(vm_t *vm, const struct gic_dscrp *gic_dscrp)
     vm->arch.vgicd.CTLR = 0;
     vm->arch.vgicd.TYPER =
         (gicd.TYPER & GICD_TYPER_ITLN_MSK) |
-        (((vm->cpu_num - 1) << GICD_TYPER_CPUN_OFF) & GICD_TYPER_CPUN_MSK);
+        (((vm->cpu_num - 1) << GICD_TYPER_CPUN_OFF) & GICD_TYPER_CPUN_MSK) |
+        (9 << 19);
     vm->arch.vgicd.IIDR = gicd.IIDR;
 
     for (int i = 0; i < GIC_MAX_SPIS; i++) {
@@ -1518,8 +1527,11 @@ void vgic_init(vm_t *vm, const struct gic_dscrp *gic_dscrp)
 
     emul_reg_t icc_sgir_emu = {.addr = SYSREG_ENC_ADDR(3, 0, 12, 11, 5),
                                .handler = vgic_icc_sgir_handler};
-
     vm_emul_add_reg(vm, &icc_sgir_emu);
+
+    emul_reg_t icc_sre_emu = {.addr = SYSREG_ENC_ADDR(3, 0, 12, 12, 5),
+                               .handler = vgic_icc_sre_handler};
+    vm_emul_add_reg(vm, &icc_sre_emu);
 }
 
 void vgic_cpu_init(vcpu_t *vcpu)

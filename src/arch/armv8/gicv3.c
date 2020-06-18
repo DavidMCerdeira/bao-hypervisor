@@ -92,7 +92,7 @@ static inline void gicc_init()
     MSR(ICC_PMR_EL1, GIC_LOWEST_PRIO);
     MSR(ICC_BPR1_EL1, 0x0);         
     MSR(ICC_CTLR_EL1, ICC_CTLR_EOIMode_BIT);
-    MSR(ICH_HCR_EL2, MRS(ICH_HCR_EL2) | ICH_HCR_LRENPIE_BIT | ICH_HCR_VGrp1EIE_BIT);
+    MSR(ICH_HCR_EL2, MRS(ICH_HCR_EL2) | ICH_HCR_LRENPIE_BIT);
     MSR(ICC_IGRPEN1_EL1, ICC_IGRPEN_EL1_ENB_BIT);
 }
 
@@ -109,11 +109,8 @@ static inline void gicr_init()
 
 void gicc_save_state(gicc_state_t *state)
 {
-    state->CTLR = MRS(ICC_CTLR_EL1);
     state->PMR = MRS(ICC_PMR_EL1);
     state->BPR = MRS(ICC_BPR1_EL1);
-    state->RPR = MRS(ICC_RPR_EL1);
-    state->HPPIR = MRS(ICC_HPPIR1_EL1);
     state->priv_ISENABLER = gicr[cpu.id].ISENABLER0;
 
     for (int i = 0; i < GIC_NUM_PRIO_REGS(GIC_CPU_PRIV); i++) {
@@ -128,11 +125,11 @@ void gicc_save_state(gicc_state_t *state)
 
 void gicc_restore_state(gicc_state_t *state)
 {
-    MSR(ICC_CTLR_EL1, state->CTLR);
+    MSR(ICC_SRE_EL2, ICC_SRE_SRE_BIT);
+    MSR(ICC_CTLR_EL1, ICC_CTLR_EOIMode_BIT);
+    MSR(ICC_IGRPEN1_EL1, ICC_IGRPEN_EL1_ENB_BIT);
     MSR(ICC_PMR_EL1, state->PMR);
     MSR(ICC_BPR1_EL1, state->BPR);
-    MSR(ICC_RPR_EL1, state->RPR);
-    MSR(ICC_HPPIR1_EL1, state->HPPIR);
     gicr[cpu.id].ISENABLER0 = state->priv_ISENABLER;
 
     for (int i = 0; i < GIC_NUM_PRIO_REGS(GIC_CPU_PRIV); i++) {
@@ -331,7 +328,7 @@ void gicd_set_route(uint64_t int_id, uint64_t route)
 
     spin_lock(&gicd_lock);
 
-    gicd.IROUTER[int_id] = route;
+    gicd.IROUTER[int_id] = route & GICD_IROUTER_AFF_MSK;
 
     spin_unlock(&gicd_lock);
 }
