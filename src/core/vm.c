@@ -20,7 +20,7 @@
 #include <cache.h>
 #include <vmm.h>
 
-enum emul_type {EMUL_MEM, EMUL_REG};
+enum emul_type { EMUL_MEM, EMUL_REG };
 struct emul_node {
     node_t node;
     enum emul_type type;
@@ -56,7 +56,9 @@ void vm_vcpu_init(vm_t* vm, const vm_config_t* config)
 {
     size_t n = NUM_PAGES(sizeof(vcpu_t));
     vcpu_t* vcpu = (vcpu_t*)mem_alloc_page(n, SEC_HYP_VM, false);
-    if(vcpu == NULL){ ERROR("failed to allocate vcpu"); }
+    if (vcpu == NULL) {
+        ERROR("failed to allocate vcpu");
+    }
     memset(vcpu, 0, n * PAGE_SIZE);
 
     cpu.vcpu = vcpu;
@@ -85,10 +87,11 @@ void vm_vcpu_init(vm_t* vm, const vm_config_t* config)
     list_push(&vm->vcpu_list, &vcpu->node);
 }
 
-void vm_init_pub_node(struct vm_public_node **vm_node, vm_t* vm) {
+void vm_init_pub_node(struct vm_public_node** vm_node, vm_t* vm)
+{
     *vm_node = objcache_alloc(&vm_node_oc);
-    struct vm_public_node *node = *vm_node;
-    vm_public_t *vm_public = objcache_alloc(&vm_pub_oc);
+    struct vm_public_node* node = *vm_node;
+    vm_public_t* vm_public = objcache_alloc(&vm_pub_oc);
     node->vm_public = vm_public;
     node->vm_public->id = vm->id;
     node->vm_public->cpu_num = vm->cpu_num;
@@ -128,22 +131,21 @@ void vm_map_mem_region(vm_t* vm, struct mem_region* reg)
         ERROR("failed to allocate vm's dev address");
     }
 
+    /* assume shared memory is the same size as region */
     if (reg->place_phys) {
         ppages_t pa_reg = mem_ppages_get(reg->phys, n);
+        /* this is a mapping of physically placed shared memory, if a shared
+         * memory was defined for this memory region */
         mem_map(&vm->as, va, &pa_reg, n, PTE_VM_FLAGS);
     } else if (!reg->shared) {
         mem_map(&vm->as, va, NULL, n, PTE_VM_FLAGS);
-    } else {
-        /* assumes shared memory is the same size as region */
+    } else if (reg->shared) {
+        /* sanity check */
         if (reg->shared->reserved || reg->shared->allocated) {
             ppages_t pa_reg = reg->shared->ppages;
             mem_map(&vm->as, va, &pa_reg, n, PTE_VM_FLAGS);
-        } else if (!reg->shared->allocated) {
-            reg->shared->ppages = mem_alloc_ppages(&cpu.as, n, true);
-            mem_map(&vm->as, va, &reg->shared->ppages, n, PTE_VM_FLAGS);
-
-            reg->shared->reserved = true;
-            reg->shared->allocated = true;
+        } else {
+            ERROR("Shared memory not initialized");
         }
     }
 }
@@ -230,46 +232,42 @@ static void vm_init_dev(vm_t* vm, const vm_config_t* config)
         for (int i = 0; i < config->platform.dev_num; i++) {
             struct dev_region* dev = &config->platform.devs[i];
             if (dev->id) {
-                if(iommu_vm_add_device(vm, dev->id) < 0){
+                if (iommu_vm_add_device(vm, dev->id) < 0) {
                     ERROR("Failed to add device to iommu");
                 }
             }
         }
     }
-      
 }
 
-void vm_init_ipc(vm_t *vm, const vm_config_t* config,
-                                            struct vm_public_node *vm_node) {
-
-    const struct platform_desc *plat = &config->platform;
-    if(plat->ipc_num <= 0)
-        return;
+void vm_init_ipc(vm_t* vm, const vm_config_t* config,
+                 struct vm_public_node* vm_node)
+{
+    const struct platform_desc* plat = &config->platform;
+    if (plat->ipc_num <= 0) return;
 
     /* check every ipc_obj in config */
-    for(int ipc = 0; ipc < plat->ipc_num; ipc++){
-        ipc_obj_config_t *ipc_obj_cfg = &plat->ipc_obj_list[ipc];
+    for (int ipc = 0; ipc < plat->ipc_num; ipc++) {
+        ipc_obj_config_t* ipc_obj_cfg = &plat->ipc_obj_list[ipc];
 
         ipc_list_lock();
 
         /* get ipc node ptr, from the list */
-        ipc_info_t *ipc_info = find_ipc_obj_in_list(&ipc_obj_cfg->ipc_obj);
-        if(ipc_info == NULL){
+        ipc_info_t* ipc_info = find_ipc_obj_in_list(&ipc_obj_cfg->ipc_obj);
+        if (ipc_info == NULL) {
             /* we did not have this entry yet, create one */
             ipc_info = create_ipc_node(&ipc_obj_cfg->ipc_obj);
         } else {
-            if(ipc_info->ipc_obj.id != ipc_obj_cfg->ipc_obj.id)
-                ERROR();
+            if (ipc_info->ipc_obj.id != ipc_obj_cfg->ipc_obj.id) ERROR();
 
-            if(ipc_info->ipc_obj.shmem != ipc_obj_cfg->ipc_obj.shmem)
-                ERROR();
+            if (ipc_info->ipc_obj.shmem != ipc_obj_cfg->ipc_obj.shmem) ERROR();
         }
 
         vm_node->vm_public->ipc_if = ipc_obj_cfg->ipc_if;
 
         /* add current vm to ipc participants */
         /* TODO: prevent same VMs from being added twice to same obj */
-        struct vm_public_node *ipc_part_node = objcache_alloc(&vm_node_oc);
+        struct vm_public_node* ipc_part_node = objcache_alloc(&vm_node_oc);
         ipc_part_node->vm_public = vm_node->vm_public;
         list_push(&ipc_info->vms, (node_t)ipc_part_node);
 
@@ -277,8 +275,8 @@ void vm_init_ipc(vm_t *vm, const vm_config_t* config,
     }
 }
 
-void vm_init(vm_t* vm, const vm_config_t* config, bool master, uint64_t vm_id){
-
+void vm_init(vm_t* vm, const vm_config_t* config, bool master, uint64_t vm_id)
+{
     /**
      * Before anything else, initialize vm structure.
      */
@@ -310,9 +308,8 @@ void vm_init(vm_t* vm, const vm_config_t* config, bool master, uint64_t vm_id){
      * its image was loaded.
      */
     if (master) {
-
         /* as the master of this VM, initialize public data */
-        struct vm_public_node *vm_node;
+        struct vm_public_node* vm_node;
         vm_init_pub_node(&vm_node, vm);
 
         vm_init_mem_regions(vm, config);
@@ -362,10 +359,10 @@ void vm_emul_add_reg(vm_t* vm, emul_reg_t* emu)
         // the pages for this emulation region must be reserved in the stage 2
         // page table.
     }
+}
 
-}    
-
-static inline emul_handler_t vm_emul_get(vm_t* vm, enum emul_type type, uint64_t addr)
+static inline emul_handler_t vm_emul_get(vm_t* vm, enum emul_type type,
+                                         uint64_t addr)
 {
     emul_handler_t handler = NULL;
     list_foreach(vm->emul_list, struct emul_node, node)
@@ -377,10 +374,10 @@ static inline emul_handler_t vm_emul_get(vm_t* vm, enum emul_type type, uint64_t
                 break;
             }
         } else {
-            emul_reg_t *emu = &node->emu_reg;
-            if(emu->addr == addr) {
+            emul_reg_t* emu = &node->emu_reg;
+            if (emu->addr == addr) {
                 handler = emu->handler;
-                break; 
+                break;
             }
         }
     }

@@ -24,6 +24,7 @@ uint64_t smc_call(uint64_t x0, uint64_t x1, uint64_t x2, uint64_t x3,
     register uint64_t r2 asm("x2") = x2;
     register uint64_t r3 asm("x3") = x3;
 
+
     asm volatile("smc	#0\n" : "=r"(r0) : "r"(r0), "r"(r1), "r"(r2), "r"(r3));
 
     if (res != NULL) {

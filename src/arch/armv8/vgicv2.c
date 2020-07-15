@@ -1133,6 +1133,15 @@ void vgic_init(vm_t *vm, const struct gic_dscrp *gic_dscrp)
     vm->arch.vgicd.TYPER =
         (gicd.TYPER & GICD_TYPER_ITLN_MSK) |
         (((vm->cpu_num - 1) << GICD_TYPER_CPUN_OFF) & GICD_TYPER_CPUN_MSK);
+
+    int previousITLines = (vm->arch.vgicd.TYPER & 0b1111);
+    int extra = gic_dscrp->extra_irq;
+    if(!(extra % 32))
+        extra = extra/32+32;
+    int extraITLines = (extra/32);
+    int ITLines = previousITLines + extraITLines;
+    vm->arch.vgicd.TYPER = ITLines & 0b1111;
+
     vm->arch.vgicd.IIDR = gicd.IIDR;
 
     size_t n = NUM_PAGES(sizeof(gicc_t));

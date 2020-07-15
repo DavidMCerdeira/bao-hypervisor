@@ -18,6 +18,8 @@ ARCH:=armv8
 # CPU definition
 CPU:=cortex-a53
 
+GIC_VERSION:=GICV3
+
 drivers = 16550_uart
 
 platform-cppflags =

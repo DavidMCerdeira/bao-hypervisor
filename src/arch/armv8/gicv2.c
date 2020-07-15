@@ -231,6 +231,7 @@ void gic_set_prio(uint64_t int_id, uint8_t prio)
 
     spin_lock(&gicd_lock);
 
+    printf("Should abort from 0x%x\n", &gicd.IPRIORITYR[reg_ind]);
     gicd.IPRIORITYR[reg_ind] =
         (gicd.IPRIORITYR[reg_ind] & ~mask) | ((prio << off) & mask);
 

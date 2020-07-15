@@ -204,26 +204,32 @@ int64_t psci_smc_handler(uint32_t smc_fid,
 
     switch (smc_fid) {
 		case PSCI_VERSION:
+		    INFO("PSCI_VERSION");
 			ret = psci_version();
 			break;
 
 		case PSCI_CPU_OFF:
+		    INFO("PSCI_CPU_OFF");
 			ret = psci_cpu_off_handler();
 			break;
 
 		case PSCI_CPU_SUSPEND_AARCH64:
+		    INFO("PSCI_CPU_SUSPEND_AARCH64");
 			ret = psci_cpu_suspend_handler(x1, x2, x3);
 			break;
 
 		case PSCI_CPU_ON_AARCH64:
+		    INFO("PSCI_CPU_ON_AARCH64");
 			ret = psci_cpu_on_handler(x1, x2, x3);
 			break;
 
 		case PSCI_AFFINITY_INFO_AARCH64:
+		    INFO("PSCI_AFFINITY_INFO_AARCH64");
 			ret = psci_affinity_info_handler(x1, x2);
 			break;
 
         case PSCI_FEATURES:
+		    INFO("PSCI_AFFINITY_INFO_AARCH64");
 			ret = psci_features_handler(x1);
 			break;
 

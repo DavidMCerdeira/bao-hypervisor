@@ -55,7 +55,6 @@ _barrier: .8byte 0
 .globl _el2_entry
 _el2_entry:
 _reset_handler:
-
 	/** 
 	 * TODO: before anything...
 	 * perform sanity checks on ID registers to ensure support for
@@ -342,7 +341,6 @@ setup_cpu:
 	dsb	nsh
 	isb
 	
-        b .
 	br  x5
 
 _enter_vas:

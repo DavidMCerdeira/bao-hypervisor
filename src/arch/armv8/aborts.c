@@ -19,13 +19,15 @@
 #include <vm.h>
 #include <emul.h>
 #include <arch/psci.h>
+#include <arch/smc.h>
 
 typedef void (*abort_handler_t)(uint32_t, uint64_t, uint64_t);
 
 void aborts_data_lower(uint32_t iss, uint64_t far, uint64_t il)
 {
     if (!(iss & ESR_ISS_DA_ISV_BIT) || (iss & ESR_ISS_DA_FnV_BIT)) {
-        ERROR("no information to handle data abort (0x%x)", far);
+        ERROR("no information to handle data abort (0x%x) from 0x%x", far,
+              cpu.vcpu->regs->elr_el2);
     }
 
     uint32_t DSFC =
@@ -76,7 +78,18 @@ void smc64_handler(uint32_t iss, uint64_t far, uint64_t il)
     if (is_psci_fid(smc_fid)) {
         ret = psci_smc_handler(smc_fid, x1, x2, x3);
     } else {
-        INFO("unknown smc_fid 0x%lx", smc_fid);
+        ret = -1;
+        WARNING("unknown smc_fid 0x%lx", smc_fid);
+        smc_res_t res;
+        ret = smc_call(smc_fid, cpu.vcpu->regs->x[1], cpu.vcpu->regs->x[2],
+                       cpu.vcpu->regs->x[3], &res);
+        // if ((smc_fid & 0xffffff00) == 0x82000000) {
+        // }
+        vcpu_writereg(cpu.vcpu, 0, res.x0);
+        vcpu_writereg(cpu.vcpu, 1, res.x1);
+        vcpu_writereg(cpu.vcpu, 2, res.x2);
+        vcpu_writereg(cpu.vcpu, 3, res.x3);
+        WARNING("SMC returned 0x%lx", ret);
     }
 
     vcpu_writereg(cpu.vcpu, 0, ret);
@@ -88,12 +101,13 @@ void sysreg_handler(uint32_t iss, uint64_t far, uint64_t il)
 {
     uint64_t reg_addr = iss & ESR_ISS_SYSREG_ADDR;
     emul_handler_t handler = vm_emul_get_reg(cpu.vcpu->vm, reg_addr);
-    if(handler != NULL){
+    if (handler != NULL) {
         emul_access_t emul;
         emul.addr = reg_addr;
         emul.width = 8;
         emul.write = iss & ESR_ISS_SYSREG_DIR ? false : true;
-        emul.reg = bit_extract(iss, ESR_ISS_SYSREG_REG_OFF, ESR_ISS_SYSREG_REG_LEN);
+        emul.reg =
+            bit_extract(iss, ESR_ISS_SYSREG_REG_OFF, ESR_ISS_SYSREG_REG_LEN);
         emul.reg_width = 8;
         emul.sign_ext = false;
 
@@ -104,14 +118,34 @@ void sysreg_handler(uint32_t iss, uint64_t far, uint64_t il)
             ERROR("register access emulation failed (0x%x)", reg_addr);
         }
     } else {
-        ERROR("no emulation handler for register access (0x%x at 0x%x)", reg_addr,
-              cpu.vcpu->regs->elr_el2);
+        ERROR("no emulation handler for register access (0x%x at 0x%x)",
+              reg_addr, cpu.vcpu->regs->elr_el2);
     }
+}
+
+void hvc64_handler(uint32_t iss, uint64_t far, uint64_t il)
+{
+    uint64_t hvc_fid = cpu.vcpu->regs->x[0];
+    uint64_t ipc_id = cpu.vcpu->regs->x[1];
+    uint64_t x2 = cpu.vcpu->regs->x[2];
+    uint64_t x3 = cpu.vcpu->regs->x[3];
+
+    INFO("\nBAO: Received HVC 0x%x\n", hvc_fid);
+
+    int64_t ret = -1;
+    switch(hvc_fid){
+    case 1:
+        ret = handle_ipc_call(hvc_fid, ipc_id, x2, x3);
+    break;
+    }
+
+    vcpu_writereg(cpu.vcpu, 0, ret);
 }
 
 abort_handler_t abort_handlers[64] = {[ESR_EC_DALEL] = aborts_data_lower,
                                       [ESR_EC_SMC64] = smc64_handler,
-                                      [ESR_EC_SYSRG] = sysreg_handler};
+                                      [ESR_EC_SYSRG] = sysreg_handler,
+                                      [ESR_EC_HVC64] = hvc64_handler};
 
 void aborts_sync_handler()
 {
@@ -126,9 +160,13 @@ void aborts_sync_handler()
     uint32_t il = bit_extract(esr, ESR_IL_OFF, ESR_IL_LEN);
     uint32_t iss = bit_extract(esr, ESR_ISS_OFF, ESR_ISS_LEN);
 
+//    INFO("Abort ec = 0x%x at 0x%lx, from 0x%lx", ec,
+//	    ipa_fault_addr, cpu.vcpu->regs->elr_el2);
+
     abort_handler_t handler = abort_handlers[ec];
     if (handler)
         handler(iss, ipa_fault_addr, il);
     else
-        ERROR("no handler for abort ec = 0x%x", ec);  // unknown guest exception
+        ERROR("no handler for abort ec = 0x%x at 0x%lx, from 0x%lx", ec,
+              ipa_fault_addr, cpu.vcpu->regs->elr_el2);  // unknown guest exception
 }

@@ -13,7 +13,8 @@ static void ipc_handler(uint32_t event, uint64_t data){
     case IPC_NOTIFY:
         /* send the SGI, assume only one VM per core */
         irq = data;
-        interrupts_vm_inject(cpu.vcpu->vm, irq, -1/*anonymous source*/);
+	INFO("\nInjecting cpu %d with %d\n", cpu.id, irq);
+	interrupts_vm_inject(cpu.vcpu->vm, irq);
     break;
     }
 }
@@ -69,6 +70,7 @@ int handle_ipc_call(uint64_t fid, uint64_t ipc_id, uint64_t x2, uint64_t x3)
     if(!ipc)
         return -1;
 
+    INFO("Notifying participants for obj %d\n", ipc->ipc_obj.id);
     notify_ipc_participants(ipc);
 
     return 0;
