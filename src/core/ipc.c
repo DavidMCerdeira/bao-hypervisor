@@ -13,7 +13,6 @@ static void ipc_handler(uint32_t event, uint64_t data){
     case IPC_NOTIFY:
         /* send the SGI, assume only one VM per core */
         irq = data;
-	INFO("\nInjecting cpu %d with %d\n", cpu.id, irq);
 	interrupts_vm_inject(cpu.vcpu->vm, irq);
     break;
     }

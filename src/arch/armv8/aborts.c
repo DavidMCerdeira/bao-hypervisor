@@ -160,9 +160,6 @@ void aborts_sync_handler()
     uint32_t il = bit_extract(esr, ESR_IL_OFF, ESR_IL_LEN);
     uint32_t iss = bit_extract(esr, ESR_ISS_OFF, ESR_ISS_LEN);
 
-//    INFO("Abort ec = 0x%x at 0x%lx, from 0x%lx", ec,
-//	    ipa_fault_addr, cpu.vcpu->regs->elr_el2);
-
     abort_handler_t handler = abort_handlers[ec];
     if (handler)
         handler(iss, ipa_fault_addr, il);

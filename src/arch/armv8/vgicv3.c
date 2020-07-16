@@ -342,25 +342,16 @@ void vgicd_emul_misc_access(emul_access_t *acc)
                               vgicd->CTLR | GICD_CTLR_ARE_NS_BIT);
             }
             break;
-            //            INFO("vgicd_emul_cltr_access %s 0x%x [0x%x]",
-            //            acc->write ? "write" : "read", acc->addr,
-            //            vcpu_readreg(cpu.vcpu, acc->reg));
         case GICD_REG_IND(TYPER):
             if (!acc->write) {
                 vcpu_writereg(cpu.vcpu, acc->reg, vgicd->TYPER);
             }
             break;
-            //            INFO("vgicd_emul_TYPER_access %s 0x%x [0x%x]",
-            //            acc->write ? "write" : "read", acc->addr,
-            //            vcpu_readreg(cpu.vcpu, acc->reg));
         case GICD_REG_IND(IIDR):
             if (!acc->write) {
                 vcpu_writereg(cpu.vcpu, acc->reg, vgicd->IIDR);
             }
             break;
-            //            INFO("vgicd_emul_IIDR_access %s 0x%x [0x%x]",
-            //            acc->write ? "write" : "read", acc->addr,
-            //            vcpu_readreg(cpu.vcpu, acc->reg));
     }
 }
 
@@ -373,17 +364,8 @@ static inline bool vgic_pcpu_is_target(vcpu_t *vcpu, vgic_int_t *interrupt)
 {
     bool priv = gic_is_priv(interrupt->id);
     bool local = priv && (interrupt->phys.redist == cpu.id);
-    bool routed_here = 0;
-
-    if (!interrupt->hw) {
-        bool local_MPIDR =
-            interrupt->phys.route ==
-            (0xffffff0000000000 & ~(1 << 24) & cpu_id_to_mpidr(vcpu->phys_id));
-        routed_here = !priv && local_MPIDR;
-    } else {
-        routed_here =
-            !priv && !(interrupt->phys.route ^ MRS(MPIDR_EL1) & MPIDR_AFF_MSK);
-    }
+    bool routed_here =
+        !priv && !(interrupt->phys.route ^ (MRS(MPIDR_EL1) & MPIDR_AFF_MSK));
 
     bool any = !priv && vgic_broadcast(vcpu, interrupt);
     return local || routed_here || any;
@@ -421,13 +403,10 @@ void vgic_route(vcpu_t *vcpu, vgic_int_t *interrupt)
         vgic_yield_ownership(vcpu, interrupt);
         if (vgic_broadcast(vcpu, interrupt)) {
             vm_msg_broadcast(vcpu->vm, &msg);
-            //            INFO("cpu%d: broadcast %d", cpu.id, interrupt->id);
         } else {
             uint64_t pcpuid = gic_is_priv(interrupt->id)
                                   ? interrupt->phys.redist
                                   : cpu_mpidr_to_id(interrupt->phys.route);
-            //            INFO("cpu%d: routing %d to ", cpu.id, interrupt->id,
-            //            pcpuid);
             cpu_send_msg(pcpuid, &msg);
         }
     }
@@ -514,8 +493,6 @@ void vgic_emul_icenabler_access(emul_access_t *acc, uint64_t vgicr_id)
         }
         vcpu_writereg(cpu.vcpu, acc->reg, val);
     }
-    //    INFO("vgic_emul_icenabler_access %s 0x%x [0x%x]", acc->write ? "write"
-    //    : "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 void vgic_set_pend(vcpu_t *vcpu, uint64_t int_id, bool pend, uint64_t vgicr_id)
@@ -577,27 +554,20 @@ void vgic_emul_pendr_access(emul_access_t *acc, bool set, uint64_t vgicr_id)
         }
         vcpu_writereg(cpu.vcpu, acc->reg, val);
     }
-    //    INFO("vgic_emul_pendr_access %s 0x%x [0x%x]", acc->write ? "write" :
-    //    "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 void vgic_emul_ispendr_access(emul_access_t *acc, uint64_t vgicr_id)
 {
     vgic_emul_pendr_access(acc, true, vgicr_id);
-    //    INFO("vgic_emul_ispendr_access %s 0x%x [0x%x]", acc->write ? "write" :
-    //    "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 void vgic_emul_icpendr_access(emul_access_t *acc, uint64_t vgicr_id)
 {
     vgic_emul_pendr_access(acc, false, vgicr_id);
-    //    INFO("vgic_emul_icpendr_access %s 0x%x [0x%x]", acc->write ? "write" :
-    //    "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 void vgic_set_actv(vcpu_t *vcpu, uint64_t int_id, bool act, uint64_t vgicr_id)
 {
-    //    INFO("vgic_set_actv %d irq %d\n", act, int_id);
     vgic_int_t *interrupt = vgic_get_int(vcpu, int_id & 0x3ff, vgicr_id);
 
     spin_lock(&interrupt->lock);
@@ -660,21 +630,16 @@ void vgic_emul_activer_access(emul_access_t *acc, bool set, uint64_t vgicr_id)
 void vgic_emul_isactiver_access(emul_access_t *acc, uint64_t vgicr_id)
 {
     vgic_emul_activer_access(acc, true, vgicr_id);
-    //    INFO("vgic_emul_isactiver_access %s 0x%x [0x%x]", acc->write ? "write"
-    //    : "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 void vgic_emul_icactiver_access(emul_access_t *acc, uint64_t vgicr_id)
 {
     vgic_emul_activer_access(acc, false, vgicr_id);
-    //    INFO("vgic_emul_icactiver_access %s 0x%x [0x%x]", acc->write ? "write"
-    //    : "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 void vgic_set_prio(vcpu_t *vcpu, uint64_t int_id, uint8_t prio,
                    uint64_t vgicr_id)
 {
-    //    INFO("vgic_set_prio 0x%x irq %d\n", prio, int_id);
     vgic_int_t *interrupt = vgic_get_int(vcpu, int_id, vgicr_id);
     prio &= 0xf0;  // priority bits are implementation defined up to 8
     spin_lock(&interrupt->lock);
@@ -737,9 +702,6 @@ void vgic_emul_ipriorityr_access(emul_access_t *acc, uint64_t vgicr_id)
 void vgicd_emul_itargetr_access(emul_access_t *acc)
 {
     if (!acc->write) vcpu_writereg(cpu.vcpu, acc->reg, 0);
-    // INFO("vgicd_emul_itargetr_access %s 0x%x [0x%x]",
-    //      acc->write ? "write" : "read", acc->addr,
-    //      vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 uint8_t vgic_get_icfgr(vcpu_t *vcpu, uint64_t int_id, uint64_t vgicr_id)
@@ -750,7 +712,6 @@ uint8_t vgic_get_icfgr(vcpu_t *vcpu, uint64_t int_id, uint64_t vgicr_id)
 void vgic_set_icfgr(vcpu_t *vcpu, uint64_t int_id, uint8_t cfg,
                     uint64_t vgicr_id)
 {
-    //    INFO("vgic_set_icfgr 0x%x irq %d\n", cfg, int_id);
     vgic_int_t *interrupt = vgic_get_int(vcpu, int_id, vgicr_id);
 
     spin_lock(&interrupt->lock);
@@ -793,9 +754,6 @@ void vgic_emul_icfgr_access(emul_access_t *acc, uint64_t vgicr_id)
         }
         vcpu_writereg(cpu.vcpu, acc->reg, cfg);
     }
-    // INFO("vgic_emul_icfgr_access %s 0x%x [0x%x]", acc->write ? "write" :
-    // "read",
-    //      acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 void vgicd_set_irouter(vcpu_t *vcpu, uint64_t int_id, uint64_t irouter)
@@ -825,8 +783,8 @@ void vgicd_set_irouter(vcpu_t *vcpu, uint64_t int_id, uint64_t irouter)
             interrupt->phys.route = irouter;
             gic_set_route(int_id, irouter);
         } else {
-            interrupt->phys.route = 0xffffff0000000000 & ~(1 << 24) &
-                                    cpu_id_to_mpidr(vcpu->phys_id);
+            interrupt->phys.route =
+                MPIDR_AFF_MSK & cpu_id_to_mpidr(vcpu->phys_id);
         }
         vgic_route(vcpu, interrupt);
         vgic_yield_ownership(vcpu, interrupt);
@@ -867,8 +825,6 @@ void vgicd_emul_id_access(emul_access_t *acc)
         vcpu_writereg(cpu.vcpu, acc->reg,
                       gicd.ID[((acc->addr & 0xff) - 0xd0) / 4]);
     }
-    //    INFO("vgicd_emul_id_access %s 0x%x [0x%x]", acc->write ? "write" :
-    //    "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 bool vgicd_emul_handler(emul_access_t *acc)
@@ -905,7 +861,6 @@ bool vgicd_emul_handler(emul_access_t *acc)
             }
     }
 
-    // spin_lock(&cpu.vcpu->vm->arch.vgicd.lock);
     switch ((acc->addr & 0xff80) >> 7) {
         case GICD_REG_GROUP(CTLR):
             vgicd_emul_misc_access(acc);
@@ -944,7 +899,6 @@ bool vgicd_emul_handler(emul_access_t *acc)
                 vgicd_emul_itargetr_access(acc);
             }
     }
-    // spin_unlock(&cpu.vcpu->vm->arch.vgicd.lock);
 
     return true;
 }
@@ -956,9 +910,6 @@ static inline uint32_t vgicr_get_id(emul_access_t *acc)
 
 void vgicr_emul_ctlr_access(emul_access_t *acc, uint64_t vgicr_id)
 {
-    // we are not actually supporting any of the write bits in gicr.CTLR
-    // ////INFO("vgicr_emul_ctlr_access %s 0x%x [0x%x]", acc->write ? "write" :
-    // "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
     if (!acc->write) {
         vcpu_writereg(cpu.vcpu, acc->reg, 0);
     }
@@ -979,8 +930,6 @@ void vgicr_set_iidr(vcpu_t *vcpu, uint32_t int_id, uint32_t val,
 void vgicr_emul_iidr_access(emul_access_t *acc, uint64_t vgicr_id)
 {
     ERROR("No emulation for: vgicr_emul_iidr_access");
-    //// INFO("vgicr_emul_iidr_access %s 0x%x [0x%x]", acc->write ? "write" :
-    ///"read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 void vgicr_emul_typer_access(emul_access_t *acc, uint64_t vgicr_id)
@@ -991,8 +940,6 @@ void vgicr_emul_typer_access(emul_access_t *acc, uint64_t vgicr_id)
     } else {
         ERROR("No emulation for: vgicr_emul_typer_access");
     }
-    //// INFO("vgicr_emul_typer_access %s 0x%x [0x%x]", acc->write ? "write" :
-    ///"read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 uint32_t vgicr_get_statusr(vcpu_t *vcpu, uint32_t int_id, uint64_t vgicr_id)
@@ -1010,8 +957,6 @@ void vgicr_set_statusr(vcpu_t *vcpu, uint32_t int_id, uint32_t val,
 void vgicr_emul_statusr_access(emul_access_t *acc, uint64_t vgicr_id)
 {
     ERROR("No emulation for: vgicr_emul_statusr_access");
-    //// INFO("vgicr_emul_statusr_access %s 0x%x [0x%x]", acc->write ? "write" :
-    ///"read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 void vgicr_emul_waker_access(emul_access_t *acc, uint64_t vgicr_id)
@@ -1024,8 +969,6 @@ void vgicr_emul_waker_access(emul_access_t *acc, uint64_t vgicr_id)
     if (!acc->write) {
         vcpu_writereg(cpu.vcpu, acc->reg, 0);
     }
-    //// INFO("vgicr_emul_waker_access %s 0x%x [0x%x]", acc->write ? "write" :
-    ///"read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 uint32_t vgicr_get_clrlpir(vcpu_t *vcpu, uint32_t int_id, uint32_t gicr_id)
@@ -1043,8 +986,6 @@ void vgicr_set_clrlpir(vcpu_t *vcpu, uint32_t int_id, uint32_t val,
 void vgicr_emul_clrlpir_access(emul_access_t *acc, uint64_t vgicr_id)
 {
     ERROR("No emulation for: vgicr_emul_clrlpir_access");
-    //// INFO("vgicr_emul_clrlpir_access %s 0x%x [0x%x]", acc->write ? "write" :
-    // "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 uint32_t vgicr_get_setlpir(vcpu_t *vcpu, uint32_t int_id, uint64_t vgicr_id)
@@ -1062,8 +1003,6 @@ void vgicr_set_setlpir(vcpu_t *vcpu, uint32_t int_id, uint32_t val,
 void vgicr_emul_setlpir_access(emul_access_t *acc, uint64_t vgicr_id)
 {
     ERROR("No emulation for: vgicr_emul_setlpir_access");
-    //// INFO("vgicr_emul_setlpir_access %s 0x%x [0x%x]", acc->write ? "write" :
-    // "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 uint32_t vgicr_get_propbaser(vcpu_t *vcpu, uint32_t int_id, uint64_t vgicr_id)
@@ -1081,9 +1020,6 @@ void vgicr_set_propbaser(vcpu_t *vcpu, uint32_t int_id, uint32_t val,
 void vgicr_emul_propbaser_access(emul_access_t *acc, uint64_t vgicr_id)
 {
     ERROR("No emulation for: vgicr_emul_propbaser_access");
-    //// INFO("vgicr_emul_propbaser_access %s 0x%x [0x%x]", acc->write ? "write"
-    ///:
-    // "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 uint32_t vgicr_get_pendbaser(vcpu_t *vcpu, uint32_t int_id, uint64_t vgicr_id)
@@ -1101,9 +1037,6 @@ void vgicr_set_pendbaser(vcpu_t *vcpu, uint32_t int_id, uint32_t val,
 void vgicr_emul_pendbaser_access(emul_access_t *acc, uint64_t vgicr_id)
 {
     ERROR("No emulation for: vgicr_emul_pendbaser_access");
-    //// INFO("vgicr_emul_pendbaser_access %s 0x%x [0x%x]", acc->write ? "write"
-    ///:
-    // "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 uint32_t vgicr_get_invlpir(vcpu_t *vcpu, uint32_t int_id, uint64_t vgicr_id)
@@ -1121,8 +1054,6 @@ void vgicr_set_invlpir(vcpu_t *vcpu, uint32_t int_id, uint32_t val,
 void vgicr_emul_invlpir_access(emul_access_t *acc, uint64_t vgicr_id)
 {
     ERROR("No emulation for: vgicr_emul_invlpir_access");
-    //// INFO("vgicr_emul_invlpir_access %s 0x%x [0x%x]", acc->write ? "write" :
-    // "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 uint32_t vgicr_get_invallr(vcpu_t *vcpu, uint32_t int_id, uint64_t vgicr_id)
@@ -1140,8 +1071,6 @@ void vgicr_set_invallr(vcpu_t *vcpu, uint32_t int_id, uint32_t val,
 void vgicr_emul_invallr_access(emul_access_t *acc, uint64_t vgicr_id)
 {
     ERROR("No emulation for: vgicr_emul_invallr_access");
-    //// INFO("vgicr_emul_invallr_access %s 0x%x [0x%x]", acc->write ? "write" :
-    // "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 uint32_t vgicr_get_syncr(vcpu_t *vcpu, uint32_t int_id, uint64_t vgicr_id)
@@ -1159,8 +1088,6 @@ void vgicr_set_syncr(vcpu_t *vcpu, uint32_t int_id, uint32_t val,
 void vgicr_emul_syncr_access(emul_access_t *acc, uint64_t vgicr_id)
 {
     ERROR("No emulation for: vgicr_emul_syncr_access");
-    //// INFO("vgicr_emul_syncr_access %s 0x%x [0x%x]", acc->write ? "write" :
-    // "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 void vgicr_emul_id_access(emul_access_t *acc, uint64_t vgicr_id)
@@ -1170,51 +1097,12 @@ void vgicr_emul_id_access(emul_access_t *acc, uint64_t vgicr_id)
         vcpu_writereg(cpu.vcpu, acc->reg,
                       gicr[pgicr_id].ID[((acc->addr & 0xff) - 0xd0) / 4]);
     }
-    //// INFO("vgicr_emul_id_access %s 0x%x [0x%x]", acc->write ? "write" :
-    // "read", acc->addr, vcpu_readreg(cpu.vcpu, acc->reg));
 }
 
 bool vgicr_emul_handler(emul_access_t *acc)
 {
-    // uint32_t acc_offset = acc->addr & 0xffff;
-
-    // switch ((acc->addr & 0xf80) >> 7) {
-    //     case GICD_REG_GROUP(CTLR):
-    //     case GICD_REG_GROUP(ISENABLER):
-    //     case GICD_REG_GROUP(ISPENDR):
-    //     case GICD_REG_GROUP(ISACTIVER):
-    //     case GICD_REG_GROUP(ICENABLER):
-    //     case GICD_REG_GROUP(ICPENDR):
-    //     case GICD_REG_GROUP(ICACTIVER):
-    //     case GICD_REG_GROUP(ICFGR):
-    //         /* Only allow aligned 32-bit accesses or byte */
-    //         if (acc->width != 4 || acc->addr & 0x3) {
-    //             return false;
-    //         }
-    //         break;
-
-    //     case GICD_REG_GROUP(SGIR):
-    //         /* Allow byte access or align 16-bit accesses */
-    //         if ((acc->width == 4 && (acc->addr & 0x3)) ||
-    //             (acc->width == 2 && (acc->addr & 0x1))) {
-    //             return false;
-    //         }
-    //         break;
-
-    //     default:
-    //         if (GICD_IS_REG(IPRIORITYR, acc_offset) ||
-    //             GICD_IS_REG(ITARGETSR, acc_offset)) {
-    //             /* Allow byte access or align 16-bit accesses */
-    //             if ((acc->width == 4 && (acc->addr & 0x3)) ||
-    //                 (acc->width == 2 && (acc->addr & 0x1))) {
-    //                 return false;
-    //             }
-    //         }
-    // }
-
     uint64_t vgicr_id = vgicr_get_id(acc);
 
-    // spin_lock(&cpu.vcpu->vm->arch.vgicd.lock);
     if (!(acc->addr & 0x10000)) {
         switch ((acc->addr & 0xffff)) {
             case GICR_REG_OFF(CTLR):
@@ -1290,7 +1178,6 @@ bool vgicr_emul_handler(emul_access_t *acc)
                 break;
         }
     }
-    // spin_unlock(&cpu.vcpu->vm->arch.vgicd.lock);
 
     return true;
 }
