@@ -17,14 +17,14 @@
 
 struct platform_desc platform = {
     .cpu_num = 4, /* ONLY SUPORT A53 FOR NOW, cpu_num max is 4 */
-    .region_num = 2,
 
     /* plat memory is: 0-3.5GB; 4-4.5GB */
+    .region_num = 1,
     .regions =
         (struct mem_region[]){
             {
                 /* 1M-2GB*/
-                .base = 0x00000000,
+                .base = 0x00200000,
                 .size = 0x7ff00000,
             },
         },

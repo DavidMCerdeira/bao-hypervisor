@@ -3,19 +3,8 @@
 /**
  * Declare VM images.
  */
-VM_IMAGE(vm_aosp,
-         "/mnt/Dataf2fs/Research/Tango/rock960/aosp/u-boot/u-boot.bin");
 
-#define VM_AOSP_BASE (0x0)
-#define VM_AOSP_SIZE (VM_AOSP_LIMIT - VM_AOSP_SHMEM_SIZE)
-#define VM_AOSP_LIMIT (0x7B000000)
-#define VM_AOSP_SHMEM_BASE (VM_AOSP_LIMIT - VM_AOSP_SHMEM_SIZE)
-#define VM_AOSP_SHMEM_SIZE (0x00006000)
-#define VM_AOSP_IMG_BASE (0x200000)
-#define VM_AOSP_SHMEM_IRQ (184)
-
-VM_IMAGE(vm_enclave, "/home/david/PhD/Research/Tango/code/rock960/enclave/"
-                     "bao_guest/build/rock960/bao_bare-metal_guest.bin");
+VM_IMAGE(vm_enclave, "/home/david/PhD/Research/MSCs_nuno/enclave/bao_guest/build/rock960/bao_bare-metal_guest.bin");
 
 #define VM_ENCLV_BASE (VM_AOSP_LIMIT)
 #define VM_ENCLV_ENTRY (VM_ENCLV_BASE)
@@ -25,6 +14,17 @@ VM_IMAGE(vm_enclave, "/home/david/PhD/Research/Tango/code/rock960/enclave/"
 #define VM_ENCLV_SHMEM_SIZE (VM_AOSP_SHMEM_SIZE)
 #define VM_ENCLV_SHMEM_IRQ (184)
 
+VM_IMAGE(vm_aosp, "/home/david/PhD/Research/MSCs_nuno/u-boot.bin");
+
+#define VM_AOSP_BASE (0x0)
+#define VM_AOSP_SIZE (VM_AOSP_LIMIT - VM_AOSP_SHMEM_SIZE)
+#define VM_AOSP_LIMIT (0x7B000000)
+#define VM_AOSP_SHMEM_BASE (VM_AOSP_LIMIT - VM_AOSP_SHMEM_SIZE)
+#define VM_AOSP_SHMEM_SIZE (0x00006000)
+#define VM_AOSP_IMG_BASE (0x200000)
+#define VM_AOSP_SHMEM_IRQ (184)
+
+#undef SHMEM
 
 /**
  * Config each VM.
@@ -38,7 +38,7 @@ struct config config = {
 
     CONFIG_HEADER
 
-        .vmlist_size = 2,
+        .vmlist_size = 1,
     .vmlist =
         {
             {
@@ -56,18 +56,24 @@ struct config config = {
                     {
                         .cpu_num = 1,
 
+#ifdef SHMEM
                         .region_num = 2,
+#else
+                        .region_num = 1,
+#endif
                         .regions =
                             (struct mem_region[]){
                                 {
                                     .base = VM_ENCLV_BASE,
                                     .size = VM_ENCLV_SIZE, /* 2MB */
                                 },
+#ifdef SHMEM
                                 {
                                     .base = VM_ENCLV_SHMEM_BASE,
                                     .size = VM_ENCLV_SHMEM_SIZE,
                                     .shared = &shmem,
                                 },
+#endif
                             },
 
                         .dev_num = 2,
@@ -86,6 +92,7 @@ struct config config = {
                                 },
                             },
 
+#ifdef SHMEM
                         .ipc_num = 1,
                         .ipc_obj_list =
                             (ipc_obj_config_t[]){
@@ -101,6 +108,7 @@ struct config config = {
                                         },
                                 },
                             },
+#endif
 
 			.console = {
 			    .base = 0xFF1A0000,
@@ -133,7 +141,11 @@ struct config config = {
                     {
                         .cpu_num = 3,
 
+#ifdef SHMEM
                         .region_num = 2,
+#else
+                        .region_num = 1,
+#endif
                         .regions =
                             (struct mem_region[]){
                                 {
@@ -142,13 +154,16 @@ struct config config = {
                                     .size = VM_AOSP_SIZE,
                                     .place_phys = 1,
                                 },
+#ifdef SHMEM
                                 {
                                     .base = VM_AOSP_SHMEM_BASE,
                                     .phys = VM_AOSP_SHMEM_BASE,
                                     .size = VM_AOSP_SHMEM_SIZE,
                                     .place_phys = 1,
 				    .shared = &shmem,
-                                }},
+                                }
+#endif
+			    },
 
                         .dev_num = 2,
                         .devs =
@@ -191,6 +206,7 @@ struct config config = {
                                 },
                             },
 
+#ifdef SHMEM
                         .ipc_num = 1,
                         .ipc_obj_list =
                             (ipc_obj_config_t[]){
@@ -206,6 +222,7 @@ struct config config = {
                                         },
                                 },
                             },
+#endif
 
                         .arch =
                             {

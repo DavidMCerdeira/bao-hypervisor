@@ -26,8 +26,7 @@ typedef void (*abort_handler_t)(uint32_t, uint64_t, uint64_t);
 void aborts_data_lower(uint32_t iss, uint64_t far, uint64_t il)
 {
     if (!(iss & ESR_ISS_DA_ISV_BIT) || (iss & ESR_ISS_DA_FnV_BIT)) {
-        ERROR("no information to handle data abort (0x%x) from 0x%x", far,
-              cpu.vcpu->regs->elr_el2);
+        WARNING("no information to handle data abort (0x%x) from 0x%x", far, cpu.vcpu->regs->elr_el2);
     }
 
     uint32_t DSFC =
@@ -64,6 +63,7 @@ void aborts_data_lower(uint32_t iss, uint64_t far, uint64_t il)
         ERROR("no emulation handler for abort(0x%x at 0x%x)", far,
               cpu.vcpu->regs->elr_el2);
     }
+
 }
 
 void smc64_handler(uint32_t iss, uint64_t far, uint64_t il)
