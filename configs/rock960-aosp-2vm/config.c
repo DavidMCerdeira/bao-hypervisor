@@ -7,7 +7,7 @@
 VM_IMAGE(vm_enclave, "/home/david/PhD/Research/MSCs_nuno/enclave/bao_guest/build/rock960/bao_bare-metal_guest.bin");
 
 #define VM_ENCLV_BASE (VM_AOSP_LIMIT)
-#define VM_ENCLV_ENTRY (VM_ENCLV_BASE)
+#define VM_ENCLV_ENTRY (VM_ENCLV_BASE + 0x4d8)
 #define VM_ENCLV_SIZE (VM_ENCLV_LIMIT - VM_ENCLV_BASE - VM_ENCLV_SHMEM_SIZE)
 #define VM_ENCLV_LIMIT (VM_ENCLV_BASE + 0x0300000)
 #define VM_ENCLV_SHMEM_BASE (VM_ENCLV_LIMIT - VM_ENCLV_SHMEM_SIZE)

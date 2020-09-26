@@ -24,7 +24,7 @@ struct platform_desc platform = {
         (struct mem_region[]){
             {
                 /* 1M-2GB*/
-                .base = 0x00200000,
+                .base = 0x00100000,
                 .size = 0x7ff00000,
             },
         },
