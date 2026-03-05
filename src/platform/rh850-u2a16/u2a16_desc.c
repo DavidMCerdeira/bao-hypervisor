@@ -7,7 +7,7 @@
 
 struct platform platform = {
 
-    .cpu_num = 4,
+    .cpu_num = 1,
     .cpu_master_fixed = true,
     .cpu_master = 0,
 

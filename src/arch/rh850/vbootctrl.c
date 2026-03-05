@@ -6,9 +6,8 @@
 #include <vbootctrl.h>
 #include <arch/emul.h>
 
-static bool vbootctrl_emul_handler(struct emul_access* acc)
+static bool vbootctrl_emul_handler(struct vcpu* vcpu, struct emul_access* acc)
 {
-    struct vcpu* vcpu = cpu()->vcpu;
     unsigned long notify = 0;
     struct vcpu* waking_vcpu = NULL;
 

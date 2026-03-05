@@ -23,10 +23,9 @@ void mpu_enable(void)
 
 bool mpu_map(struct addr_space* as, struct mp_region* mem, bool locked)
 {
-    UNUSED_ARG(as);
     UNUSED_ARG(locked);
 
-    return mpu_add_region(mem, false);
+    return mpu_add_region(as, mem, false);
 }
 
 bool mpu_unmap(struct addr_space* as, struct mp_region* mem)
@@ -36,10 +35,7 @@ bool mpu_unmap(struct addr_space* as, struct mp_region* mem)
 
 bool mpu_update(struct addr_space* as, struct mp_region* mpr)
 {
-    UNUSED_ARG(as);
-    UNUSED_ARG(mpr);
-
-    return mpu_update_region(mpr);
+    return mpu_update_region(as, mpr);
 }
 
 bool mpu_perms_compatible(unsigned long perms1, unsigned long perms2)

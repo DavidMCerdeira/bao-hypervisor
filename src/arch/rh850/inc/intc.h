@@ -7,6 +7,8 @@
 #define __INTC_H__
 
 #include <bao.h>
+#include <interrupts.h>
+#include <platform.h>
 
 #define INTC_PRIVATE_IRQS_NUM 32
 
@@ -70,6 +72,11 @@ struct fenc {
     uint32_t FENMIC;
 };
 
+typedef enum {
+    TPTM_SEL_FEINT = 0,
+    TPTM_SEL_EIINT = 1,
+} tptm_sel_t;
+
 struct feinc {
     uint32_t FEINTF;
     uint32_t FEINTFMSK;
@@ -88,5 +95,7 @@ void intc_hyp_assign(irqid_t int_id);
 
 void intc_set_pend(irqid_t int_id, bool en);
 bool intc_get_pend(irqid_t int_id);
+
+void intc_set_tptmsel(tptm_sel_t sel);
 
 #endif /* INTC_H */

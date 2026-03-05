@@ -23,7 +23,7 @@ static void sched_set_next_timer_event(void)
     timer_event_add(timer_event);
 }
 
-static void sched_next(void) {
+void sched_next(void) {
     node_t *next_node = list_pop(&cpu()->vcpu_list);
     list_push(&cpu()->vcpu_list, next_node);
     struct vcpu *vcpu = CONTAINER_OF(struct vcpu, cpu_vcpu_list_node, next_node);

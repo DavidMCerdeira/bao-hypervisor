@@ -10,6 +10,8 @@
 #include <platform.h>
 #include <vipir.h>
 #include <vbootctrl.h>
+#include <asm.h>
+#include <arch/mpu.h>
 
 void vm_arch_init(struct vm* vm, const struct vm_config* vm_config)
 {
@@ -27,6 +29,8 @@ void vcpu_arch_init(struct vcpu* vcpu, struct vm* vm)
 {
     UNUSED_ARG(vm);
     UNUSED_ARG(vcpu);
+
+    vm->as.arch.vcpu_mpu_entries[srs_peid_read()].last_idx = 31;
 }
 
 void vcpu_arch_reset(struct vcpu* vcpu, vaddr_t entry)
@@ -62,6 +66,20 @@ void vcpu_arch_reset(struct vcpu* vcpu, vaddr_t entry)
     srs_gmeiic_write(0x0);
     srs_gmfeic_write(0x0);
 
+    /* TODO */
+    vcpu->regs.sys_regs.RBCR1 = 0xffff;
+    vcpu->regs.sys_regs.GMEIPSW = 0x3F00002;
+    vcpu->regs.sys_regs.GMFEPSW = 0x20;
+    vcpu->regs.sys_regs.GMPSW = 0x8020;
+    vcpu->regs.sys_regs.GMINTCFG = 0xf0002;
+    vcpu->regs.sys_regs.GMPLMR = 0x3f;
+    vcpu->regs.sys_regs.GMMPM = GMMPM_GMPE; /* critical for enabling guest access control */
+    vcpu->regs.sys_regs.MCA = srs_mca_read();
+    vcpu->regs.sys_regs.MCS = srs_mcs_read();
+    vcpu->regs.sys_regs.MCR = srs_mcr_read();
+    vcpu->regs.sys_regs.MCI = srs_mci_read();
+
+    srs_tsctrl_write(1);
     vintc_vcpu_reset(vcpu);
 }
 
@@ -100,4 +118,38 @@ unsigned long vcpu_readpc(struct vcpu* vcpu)
 void vcpu_writepc(struct vcpu* vcpu, unsigned long val)
 {
     vcpu->regs.pc = val;
+}
+
+void vcpu_restore_state(struct vcpu* vcpu)
+{
+    const struct arch_regs* r = &vcpu->regs;
+    /* TODO: MPU regions */
+    ldm_gsr((unsigned long)&(vcpu->regs.sys_regs));
+
+    srs_eipc_write(r->pc);
+
+    mpu_restore_state(&vcpu->vm->as);
+
+    vmid_t id = vcpu->vm->id;
+    unsigned long eipswh = srs_eipswh_read() & ~EIPSWH_GPID_MASK;
+    srs_eipswh_write(eipswh | (id << EIPSWH_GPID_OFF));
+
+    unsigned long fepswh = srs_fepswh_read() & ~FEPSWH_GPID_MASK;
+    srs_fepswh_write(fepswh | (id << FEPSWH_GPID_OFF));
+
+    srs_gmspid_write(vcpu->vm->id);
+    srs_mpid6_write(vcpu->vm->id);
+
+    /* unsigned long pswh = get_pswh() & ~EIPSWH_GPID_MASK; */
+    /* set_pswh(vcpu->vm->id); */
+    /* set_pswh(pswh | (vcpu->vm->id << EIPSWH_GPID_OFF)); */
+}
+
+void vcpu_save_state(struct vcpu* vcpu)
+{
+    (void)vcpu;
+    stm_gsr((unsigned long)&(vcpu->regs.sys_regs));
+
+    /* TODO: MPU regions */
+    mpu_save_state(&vcpu->vm->as);
 }

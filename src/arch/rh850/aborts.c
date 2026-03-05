@@ -165,7 +165,7 @@ static void data_abort(void)
         struct emul_access emul;
         decode_access(&emul, addr);
 
-        if (handler(&emul)) {
+        if (handler(cpu()->vcpu, &emul)) {
             unsigned long pc_step = MEI_GET_LEN(mei);
             vcpu_writepc(cpu()->vcpu, vcpu_readpc(cpu()->vcpu) + pc_step);
         } else {
@@ -180,7 +180,7 @@ static void hvtrap(void)
 {
     unsigned long r6 = vcpu_readreg(cpu()->vcpu, 6);
     unsigned long res = (unsigned long)hypercall(r6);
-    vcpu_writereg(cpu()->vcpu, 6, res);
+    vcpu_writereg(cpu()->vcpu, 10, res);
 }
 
 static inline unsigned long get_exception_cause(void)
@@ -217,7 +217,7 @@ void abort(void)
             if (cause >= HVTRAP_LOW && cause <= HVTRAP_HIGH) {
                 hvtrap();
             } else {
-                WARNING("Exception not handled. Cause: 0x%lx", cause);
+                ERROR("Exception not handled. Cause: 0x%lx\n", cause);
             }
     }
 }

@@ -36,9 +36,8 @@ void vintc_inject(struct vcpu* vcpu, irqid_t int_id)
     intc_set_pend(int_id, true);
 }
 
-static void emulate_intc_eic_access(struct emul_access* acc)
+static void emulate_intc_eic_access(struct vcpu* vcpu, struct emul_access* acc)
 {
-    struct vcpu* vcpu = cpu()->vcpu;
     struct vm* vm = vcpu->vm;
 
     if (acc->width > 2) {
@@ -78,9 +77,8 @@ static void emulate_intc_eic_access(struct emul_access* acc)
     }
 }
 
-static void emulate_intc_imr_access(struct emul_access* acc)
+static void emulate_intc_imr_access(struct vcpu* vcpu, struct emul_access* acc)
 {
-    struct vcpu* vcpu = cpu()->vcpu;
     struct vm* vm = vcpu->vm;
 
     size_t acc_intc2_offset = acc->addr - (unsigned long)intc2_hw;
@@ -134,9 +132,8 @@ static void emulate_intc_imr_access(struct emul_access* acc)
     }
 }
 
-static void emulate_intc_eibd_access(struct emul_access* acc)
+static void emulate_intc_eibd_access(struct vcpu* vcpu, struct emul_access* acc)
 {
-    struct vcpu* vcpu = cpu()->vcpu;
     struct vm* vm = vcpu->vm;
 
     size_t acc_intc2_offset = acc->addr - (unsigned long)intc2_hw;
@@ -185,9 +182,8 @@ static void emulate_intc_eibd_access(struct emul_access* acc)
     }
 }
 
-static void emulate_intc_eeic_access(struct emul_access* acc)
+static void emulate_intc_eeic_access(struct vcpu* vcpu, struct emul_access* acc)
 {
-    struct vcpu* vcpu = cpu()->vcpu;
     struct vm* vm = vcpu->vm;
 
     size_t acc_intc2_offset = acc->addr - (unsigned long)intc2_hw;
@@ -221,59 +217,63 @@ static void emulate_intc_eeic_access(struct emul_access* acc)
     }
 }
 
-static bool vintc2_emul_handler(struct emul_access* acc)
+static bool vintc2_emul_handler(struct vcpu* vcpu, struct emul_access* acc)
 {
     if (IS_ALIGNED(acc->addr, acc->width) && acc->width <= 4) {
         unsigned long offset = (acc->addr - (unsigned long)intc2_hw);
         unsigned long base_reg_id = (offset) & (INTC2_OFFSET_MASK);
         switch (base_reg_id) {
             case INTC2_EIC_OFFSET:
-                emulate_intc_eic_access(acc);
+                emulate_intc_eic_access(vcpu, acc);
                 break;
             case INTC2_IMR_OFFSET:
-                emulate_intc_imr_access(acc);
+                emulate_intc_imr_access(vcpu, acc);
                 break;
             case INTC2_EIBD_OFFSET:
-                emulate_intc_eibd_access(acc);
+                emulate_intc_eibd_access(vcpu, acc);
                 break;
             case INTC2_EEIC_OFFSET:
-                emulate_intc_eeic_access(acc);
+                emulate_intc_eeic_access(vcpu, acc);
                 break;
             default:
                 return false;
         }
     } else {
         if (!acc->write) {
-            vcpu_writereg(cpu()->vcpu, acc->reg, 0);
+            vcpu_writereg(vcpu, acc->reg, 0);
         }
     }
 
     return true;
 }
 
-static bool vintif_emul_handler(struct emul_access* acc)
+static bool vintif_emul_handler(struct vcpu* vcpu, struct emul_access* acc)
 {
+    UNUSED_ARG(vcpu);
     UNUSED_ARG(acc);
     ERROR("%s not implemented", __func__);
     return false;
 }
 
-static bool veint_emul_handler(struct emul_access* acc)
+static bool veint_emul_handler(struct vcpu* vcpu, struct emul_access* acc)
 {
+    UNUSED_ARG(vcpu);
     UNUSED_ARG(acc);
     ERROR("%s not implemented", __func__);
     return false;
 }
 
-static bool vfenc_emul_handler(struct emul_access* acc)
+static bool vfenc_emul_handler(struct vcpu* vcpu, struct emul_access* acc)
 {
+    UNUSED_ARG(vcpu);
     UNUSED_ARG(acc);
     ERROR("%s not implemented", __func__);
     return false;
 }
 
-static bool vfeinc_emul_handler(struct emul_access* acc)
+static bool vfeinc_emul_handler(struct vcpu* vcpu, struct emul_access* acc)
 {
+    UNUSED_ARG(vcpu);
     UNUSED_ARG(acc);
     ERROR("%s not implemented", __func__);
     return false;

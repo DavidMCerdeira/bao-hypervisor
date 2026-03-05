@@ -155,6 +155,16 @@ void intc_set_prio(irqid_t int_id, unsigned long prio)
     }
 }
 
+void intc_set_tptmsel(tptm_sel_t sel)
+{
+    unsigned long mask = 1U << cpu()->id;
+    if (sel == TPTM_SEL_EIINT) {
+        intif_hw->TPTMSEL |= mask;
+    } else {
+        intif_hw->TPTMSEL &= mask;
+  }
+}
+
 static void intc_map_global_mmio(void)
 {
     vaddr_t intc1_ptr = mem_alloc_map_dev(&cpu()->as, SEC_HYP_GLOBAL, INVALID_VA,

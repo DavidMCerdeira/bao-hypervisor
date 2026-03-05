@@ -22,6 +22,8 @@ struct arch_platform {
     paddr_t bootctrl_addr;
 
     paddr_t ipir_addr;
+
+    paddr_t tptm_addr;
 };
 
 #endif /* __ARCH_PLATFORM_H__ */

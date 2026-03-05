@@ -11,6 +11,7 @@ cpu-objs-y+=ipir.o
 cpu-objs-y+=interrupts.o
 cpu-objs-y+=mem.o
 cpu-objs-y+=mpu.o
+cpu-objs-y+=tptm.o
 cpu-objs-y+=vintc.o
 cpu-objs-y+=vipir.o
 cpu-objs-y+=vbootctrl.o

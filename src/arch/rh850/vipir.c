@@ -21,9 +21,8 @@ extern volatile struct ipir_hw* ipir;
 
 static spinlock_t ipir_lock[PLAT_CPU_NUM][IPIR_NUM_CHANNELS] = { SPINLOCK_INITVAL };
 
-static bool vipir_emul_handler(struct emul_access* acc)
+static bool vipir_emul_handler(struct vcpu* vcpu, struct emul_access* acc)
 {
-    struct vcpu* vcpu = cpu()->vcpu;
     struct vm* vm = vcpu->vm;
 
     if (acc->width != 1) {
@@ -110,12 +109,12 @@ void vipir_init(struct vm* vm)
         vm_emul_add_mem(vm, &vm->arch.ipir_emul);
 
         /* Reserve IPIR channels not used by the hypervisor */
-        for (irqid_t i = IPIR_CH0_IRQ_ID; i < (IPIR_CH0_IRQ_ID + IPIR_NUM_CHANNELS); i++) {
-            if (i != IPI_HYP_IRQ_ID) {
-                if (!interrupts_vm_assign(vm, i)) {
-                    ERROR("Failed to reserve VM IPIR channel interrupt");
-                }
-            }
-        }
+        // for (irqid_t i = IPIR_CH0_IRQ_ID; i < (IPIR_CH0_IRQ_ID + IPIR_NUM_CHANNELS); i++) {
+        //     if (i != IPI_HYP_IRQ_ID) {
+        //         if (!interrupts_vm_assign(vm, i)) {
+        //             ERROR("Failed to reserve VM IPIR channel interrupt");
+        //         }
+        //     }
+        // }
     }
 }

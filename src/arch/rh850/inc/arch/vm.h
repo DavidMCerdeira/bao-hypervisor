@@ -79,9 +79,51 @@ struct arch_regs {
     } gp_regs;
     // Basic system registers
     unsigned long pc;
+
+    /* only saved/restored upon explicit save/restore call */
+    struct {
+        unsigned long FPSR;
+        unsigned long FPEPC;
+        unsigned long CTPC;
+        unsigned long CTPSW;
+        unsigned long CTBP;
+        unsigned long MCTL;
+        unsigned long SCCFG;
+        unsigned long SCBP;
+        unsigned long RBCR0;
+        unsigned long RBCR1;
+        unsigned long RBNR;
+        unsigned long RBIP;
+        unsigned long MCA;
+        unsigned long MCS;
+        unsigned long MCR;
+        unsigned long MCI;
+        unsigned long MPIDX;
+        unsigned long GMEIPC;
+        unsigned long GMEIPSW;
+        unsigned long GMFEPC;
+        unsigned long GMFEPSW;
+        unsigned long GMPSW;
+        unsigned long GMMEA;
+        unsigned long GMMEI;
+        unsigned long GMEIIC;
+        unsigned long GMFEIC;
+        unsigned long GMSPID;
+        unsigned long GMSPIDLIST;
+        unsigned long GMEBASE;
+        unsigned long GMINTBP;
+        unsigned long GMINTCFG;
+        unsigned long GMPLMR;
+        unsigned long GMSVLOCK;
+        unsigned long GMMPM;
+        unsigned long GMEIWR;
+        unsigned long GMFEWR;
+    } sys_regs;
 };
 
 void vcpu_arch_entry(void);
+void vcpu_restore_state(struct vcpu* vcpu);
+void vcpu_save_state(struct vcpu* vcpu);
 
 static inline void vcpu_arch_inject_hw_irq(struct vcpu* vcpu, irqid_t id)
 {

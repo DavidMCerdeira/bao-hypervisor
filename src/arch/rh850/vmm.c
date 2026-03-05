@@ -14,6 +14,15 @@ void vmm_arch_init(void)
 
     srs_gmcfg_write(GMCFG_GCU1 | GMCFG_GCU0 | GMCFG_GSYSE | GMCFG_HMP);
 
+    uint32_t eipsw = srs_eipsw_read();
+    eipsw = (eipsw & ~(1UL << 5)) | (0x3fUL << 20); /* enable interrupts */
+    srs_eipsw_write(eipsw);
+    /* set_eipsw(get_eipsw() | (0x3f<<20) ); */
+    uint32_t fepsw = srs_fepsw_read();
+    fepsw = (fepsw & ~(1UL << 5)) | (0x3fUL << 20); /* enable interrupts */
+    srs_fepsw_write(fepsw);
+
+
     srs_eipswh_write(EIPSWH_GM);
     srs_fepswh_write(FEPSWH_GM);
 }

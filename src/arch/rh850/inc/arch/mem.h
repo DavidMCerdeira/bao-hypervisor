@@ -7,8 +7,24 @@
 #define __ARCH_MEM_H__
 
 #include <bao.h>
+#include <list.h>
+#include <bitmap.h>
+#include <platform_defs.h>
 
 #define MPU_ARCH_MAX_NUM_ENTRIES (32)
+
+struct addr_space;
+struct mp_region;
+
+#define MPU_MPAT_RMPID_OFFSET    (16)
+#define MPU_MPAT_RMPID_MASK      (0xfUL << MPU_MPAT_RMPID_OFFSET)
+#define MPU_MPAT_WMPID_OFFSET    (24)
+#define MPU_MPAT_WMPID_MASK      (0xfUL << MPU_MPAT_WMPID_OFFSET)
+#define MPU_MPAT_MPID_MASK       (MPU_MPAT_WMPID_MASK | MPU_MPAT_RMPID_MASK)
+
+#define MPU_MPAT_RMPID_SET(mpid) ((1UL << MPU_MPAT_RMPID_OFFSET) << (mpid))
+#define MPU_MPAT_WMPID_SET(mpid) ((1UL << MPU_MPAT_WMPID_OFFSET) << (mpid))
+#define MPU_MPAT_MPID_SET(mpid)  (MPU_MPAT_RMPID_SET((mpid)) | MPU_MPAT_WMPID_SET((mpid)))
 
 typedef union {
     struct {
@@ -44,7 +60,16 @@ typedef union {
 } mpat_flags_t;
 
 struct addr_space_arch {
-    unsigned long mpu_entry_mask;
+    struct {
+        struct {
+            unsigned long MPLA;
+            unsigned long MPUA;
+            unsigned long MPAT;
+        } mpu_entries[32];
+        BITMAP_ALLOC(vcpu_allocated_entries, MPU_ARCH_MAX_NUM_ENTRIES);
+        unsigned long last_idx;
+        unsigned long save_hbe;
+    } vcpu_mpu_entries[PLAT_CPU_NUM];
 };
 
 typedef mpat_flags_t mem_flags_t;

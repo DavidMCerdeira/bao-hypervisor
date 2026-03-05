@@ -16,7 +16,7 @@
     /* save program registers in vcpu struct */
     stsr 29, r31, 0                /* get cpu* from FEWR */
     ld.w CPU_VCPU_OFF[r31], r31    /* get vcpu* */
-    add VCPU_REGS_OFF, r31
+    addi VCPU_REGS_OFF, r31, r31
     st.w  r1,  4[r31]
     st.dw r2,  8[r31]
     st.dw r4,  16[r31]
@@ -66,9 +66,42 @@
 .macro VM_ENTRY
     /* load vcpu registers from memory */
     stsr 29, r30, 0
-    ld.w CPU_VCPU_OFF[r30], r30
-    add VCPU_REGS_OFF, r30
+    /* r14 := next_vcpu = *(cpu + CPU_NEXT_VCPU_OFF) */
+    ld.w  CPU_NEXT_VCPU_OFF[r30], r14
 
+    /* if (next_vcpu == 0) goto 11f; */
+    cmp   r0, r14
+    bz    11f
+
+    /* r30 := cur_vcpu = *(cpu + CPU_VCPU_OFF) */
+    ld.w  CPU_VCPU_OFF[r30], r30
+
+    /* if (cur_vcpu != next_vcpu) call vcpu_context_switch; */
+    cmp   r30, r14
+    bz    1f
+    jarl  vcpu_context_switch, lp
+1:
+    stsr 29, r30, 0
+    /* r14 := next_vcpu = *(cpu + CPU_NEXT_VCPU_OFF) */
+    ld.w  CPU_NEXT_VCPU_OFF[r30], r14
+    /* r13 := blocked = *(next_vcpu + VCPU_BLOCKED_COUNT) */
+    ld.w  VCPU_BLOCKED_COUNT[r14], r13
+
+    /* if (blocked == 0) goto 2f; else fall through to 11: */
+    cmp   r0, r13
+    bz    2f
+
+11:
+    jarl   cpu_arch_standby, lp
+    br .
+
+2:
+    stsr 29, r30, 0
+    /* r30 := cur_vcpu = *(cpu + CPU_VCPU_OFF) */
+    ld.w CPU_VCPU_OFF[r30], r30
+    addi VCPU_REGS_OFF, r30, r30
+
+    /* restore PC */
     /**
      * Restore PC to EIPC or FEPC depending on the exception type
      * r30: vcpu register struct base address
@@ -86,7 +119,7 @@
 2:
     mov r30, r31
 
-    ld.w  4[r31], r1
+    ld.dw 0[r31], r0
     ld.dw 8[r31], r2
     ld.dw 16[r31], r4
     ld.dw 24[r31], r6
