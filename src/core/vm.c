@@ -55,6 +55,8 @@ static void vm_vcpu_init(struct vm* vm, const struct vm_config* vm_config)
 
     vcpu->blocked_count = 0;
 
+    vcpu->cpu_vcpu_list_node = 0;
+
     vcpu_arch_init(vcpu, vm);
     vcpu_arch_reset(vcpu, vm_config->entry);
 
