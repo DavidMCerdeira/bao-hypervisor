@@ -14,6 +14,7 @@ __attribute__((weak)) void arch_config_defs(void){
 static size_t remio_dev_num(void)
 {
     size_t dev_num = 0;
+#ifdef CONFIG_REMIO
     for (size_t vm_id = 0; vm_id < config.vmlist_size; vm_id++) {
         struct vm_config* vm_config = &config.vmlist[vm_id];
         for (size_t i = 0; i < vm_config->platform.remio_dev_num; i++) {
@@ -23,6 +24,7 @@ static size_t remio_dev_num(void)
             }
         }
     }
+#endif
     return dev_num;
 }
 

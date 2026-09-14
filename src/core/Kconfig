@@ -3,6 +3,22 @@
 
 menu "Core features"
 
+config IPC
+	bool "Inter-VM communication"
+	default y
+	help
+	  Inter-VM communication via shared memory
+	  Includes the associated notification hypercalls.
+
+config REMIO
+	bool "Remote I/O"
+	default n if MCU_MODE
+	default y
+	help
+	  Remote I/O devices: paravirtualised device frontends and backends
+	  bridged between vms over shared memory, with the associated
+	  emulation and hypercall handling.
+
 config MMIO_SLAVE_SIDE_PROT
 	bool "MMIO slave-side protection"
 	depends on PLAT_HAS_MMIO_SLAVE_SIDE_PROT && MEM_PROT_MPU

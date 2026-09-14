@@ -251,6 +251,7 @@ static void vm_init_dev(struct vm* vm, const struct vm_config* vm_config)
     }
 }
 
+#ifdef CONFIG_REMIO
 static void vm_init_remio_dev(struct vm* vm, struct remio_dev* remio_dev)
 {
     struct shmem* shmem = shmem_get(remio_dev->shmem.shmem_id);
@@ -301,6 +302,7 @@ static void vm_init_remio(struct vm* vm, const struct vm_config* vm_config)
     }
     remio_assign_vm_cpus(vm);
 }
+#endif /* CONFIG_REMIO */
 
 #ifdef CONFIG_CPU_LOCAL_COPIES
 
@@ -418,7 +420,9 @@ struct vm* vm_init(struct vm* vm, struct cpu_synctoken* vm_init_sync,
         vm_init_mem_regions(vm, vm_config);
         vm_init_dev(vm, vm_config);
         vm_init_ipc(vm, vm_config);
+#ifdef CONFIG_REMIO
         vm_init_remio(vm, vm_config);
+#endif
     }
 
     cpu_sync_and_clear_msgs(&vm->mut->sync);

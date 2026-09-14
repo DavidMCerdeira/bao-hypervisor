@@ -13,9 +13,11 @@ long int hypercall(unsigned long id)
         case HC_IPC:
             ret = ipc_hypercall();
             break;
+#ifdef CONFIG_REMIO
         case HC_REMIO:
             ret = remio_hypercall();
             break;
+#endif
         default:
             WARNING("Unknown hypercall id %d\n", id);
     }
