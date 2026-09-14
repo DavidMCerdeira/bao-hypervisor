@@ -8,7 +8,7 @@
 
 #define BAO_VAS_BASE CONFIG_HYP_BASE_ADDR
 #define PAGE_SIZE    (64)
-#define STACK_SIZE   (0x1000)
+#define STACK_SIZE   (CONFIG_HYP_STACK_SIZE)
 
 #ifndef __ASSEMBLER__
 

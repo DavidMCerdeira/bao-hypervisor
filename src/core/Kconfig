@@ -75,6 +75,15 @@ config HYP_MPU_MAP
 	default 1 if HYP_MPU_MAP_SIMPLE
 	default 0
 
+config HYP_STACK_SIZE
+	hex "Hypervisor stack size per cpu"
+	depends on MEM_PROT_MPU
+	default 0x200 if ARCH_TRICORE
+	default 0x1000
+	help
+	  Size of each cpu's hypervisor stack, part of the cpu structure.
+	  Measure the high-water mark on the target before lowering it.
+
 config IPI_MAX_EVENTS
 	int "Depth of the per-cpu message queue"
 	default 253
