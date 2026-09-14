@@ -16,6 +16,10 @@
 #include <tlb.h>
 #include <config.h>
 
+#ifdef CONFIG_MEM_STATIC_ALLOC
+#error "Static memory allocation only is only supported on MPU platforms"
+#endif
+
 #define MEM_SEC_SHARED     (true)
 #define MEM_SEC_NOT_SHARED (false)
 

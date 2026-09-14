@@ -32,6 +32,7 @@ struct ppages {
     colormap_t colors;
 };
 
+#ifndef CONFIG_MEM_STATIC_ALLOC
 struct page_pool {
     node_t node;
     paddr_t base;
@@ -41,6 +42,7 @@ struct page_pool {
     bitmap_t* bitmap;
     spinlock_t lock;
 };
+#endif
 
 struct mem_region {
     paddr_t base;
@@ -59,7 +61,10 @@ struct mem_region {
      * a single affine region needs no mark; with several, exactly one must carry it.
      */
     bool cpu_home;
+
+#ifndef CONFIG_MEM_STATIC_ALLOC
     struct page_pool page_pool;
+#endif
 };
 
 static inline struct ppages mem_ppages_get(paddr_t base, size_t num_pages)
@@ -75,6 +80,10 @@ static inline bool all_clrs(colormap_t clrs)
 }
 
 void mem_init(void);
+/**
+ * Page allocation. Not available with CONFIG_MEM_STATIC_ALLOC, where initialization never
+ * allocates and these fail at runtime: mem_alloc_ppages returns no pages and mem_alloc_page errors.
+ */
 void* mem_alloc_page(size_t num_pages, as_sec_t sec, bool phys_aligned);
 struct ppages mem_alloc_ppages(colormap_t colors, size_t num_pages, bool aligned);
 vaddr_t mem_alloc_map(struct addr_space* as, as_sec_t section, struct ppages* page, vaddr_t at,
@@ -87,21 +96,24 @@ bool mem_map_reclr(struct addr_space* as, vaddr_t va, struct ppages* ppages, siz
 void mem_arch_map_sync_tlbs(struct addr_space* as, vaddr_t va, size_t num_pages);
 vaddr_t mem_map_cpy(struct addr_space* ass, struct addr_space* asd, as_sec_t asd_section,
     vaddr_t vas, vaddr_t vad, size_t num_pages);
-bool pp_alloc(struct page_pool* pool, size_t num_pages, bool aligned, struct ppages* ppages);
-
 void mem_prot_init(void);
 size_t mem_cpu_boot_alloc_size(void);
 
+#ifndef CONFIG_MEM_STATIC_ALLOC
+bool pp_alloc(struct page_pool* pool, size_t num_pages, bool aligned, struct ppages* ppages);
 void mem_color_hypervisor(const paddr_t load_addr, struct mem_region* root_region);
 bool pp_alloc_clr(struct page_pool* pool, size_t num_pages, colormap_t colors,
     struct ppages* ppages);
+#endif
 
 /* Functions implemented in architecture dependent files */
 
 void as_arch_init(struct addr_space* as);
 bool mem_translate(struct addr_space* as, vaddr_t va, paddr_t* pa);
 
+#ifndef CONFIG_MEM_STATIC_ALLOC
 extern struct list page_pool_list;
+#endif
 
 /* The address where the Bao image is loaded in memory */
 extern vaddr_t img_addr;

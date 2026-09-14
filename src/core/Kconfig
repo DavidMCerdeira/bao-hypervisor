@@ -75,6 +75,15 @@ config HYP_MPU_MAP
 	default 1 if HYP_MPU_MAP_SIMPLE
 	default 0
 
+config MEM_STATIC_ALLOC
+	bool "Static memory allocation only (no page allocator)"
+	depends on MEM_PROT_MPU
+	help
+	  Compile out the page allocator and its page-pool bitmaps. Every
+	  structure the hypervisor needs is statically sized from the
+	  configuration, VM memory and shared memory must be placed
+	  explicitly, and any call to the page allocator fails at runtime.
+
 config HYP_STACK_SIZE
 	hex "Hypervisor stack size per cpu"
 	depends on MEM_PROT_MPU

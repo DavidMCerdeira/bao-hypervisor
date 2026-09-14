@@ -428,6 +428,7 @@ void as_init(struct addr_space* as, enum AS_TYPE type, colormap_t colors)
     }
 }
 
+#ifndef CONFIG_MEM_STATIC_ALLOC
 static void mem_free_ppages(struct ppages* ppages)
 {
     list_foreach (page_pool_list, struct page_pool, pool) {
@@ -439,6 +440,7 @@ static void mem_free_ppages(struct ppages* ppages)
         spin_unlock(&pool->lock);
     }
 }
+#endif
 
 static void mem_msg_handler(uint32_t event, uint64_t data)
 {
@@ -825,10 +827,17 @@ void mem_unmap(struct addr_space* as, vaddr_t at, size_t num_pages, bool free_pp
         return;
     }
 #endif
-    if (mem_unmap_range(as, at, num_pages * PAGE_SIZE, MEM_BROADCAST) && free_ppages) {
+    bool unmapped = mem_unmap_range(as, at, num_pages * PAGE_SIZE, MEM_BROADCAST);
+#ifdef CONFIG_MEM_STATIC_ALLOC
+    /* Without page pools there is nothing to give back: no mapping was ever backed by one */
+    UNUSED_ARG(unmapped);
+    UNUSED_ARG(free_ppages);
+#else
+    if (unmapped && free_ppages) {
         struct ppages ppages = mem_ppages_get(at, num_pages);
         mem_free_ppages(&ppages);
     }
+#endif
 }
 
 vaddr_t mem_map_cpy(struct addr_space* ass, struct addr_space* asd, as_sec_t asd_section,

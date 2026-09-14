@@ -14,16 +14,66 @@
 #include <fences.h>
 #include <config.h>
 #include <shmem.h>
+#include <platform_defs.h>
 
 extern uint8_t _image_start, _image_load_end, _image_end, _vm_image_start, _vm_image_end,
     _data_vma_start;
 
-struct list page_pool_list;
+static bool mem_vm_img_in_phys_rgn(struct vm_config* vm_config)
+{
+    bool img_in_rgn = false;
+
+    for (size_t i = 0; i < vm_config->platform.region_num; i++) {
+        if (vm_config->platform.regions[i].place_phys) {
+            vaddr_t rgn_base = vm_config->platform.regions[i].phys;
+            size_t rgn_size = vm_config->platform.regions[i].size;
+            paddr_t img_base = vm_config->image.load_addr;
+            size_t img_size = vm_config->image.size;
+            if (range_in_range(img_base, img_size, rgn_base, rgn_size)) {
+                img_in_rgn = true;
+                break;
+            }
+        }
+    }
+
+    return img_in_rgn;
+}
 
 /* The address where the Bao image is loaded in memory */
 vaddr_t img_addr __attribute__((section(".datanocopy")));
 /* The address where the data section is loaded in memory */
 vaddr_t data_addr __attribute__((section(".datanocopy")));
+
+__attribute__((weak)) bool mem_map_reclr(struct addr_space* as, vaddr_t va, struct ppages* ppages,
+    size_t num_pages, mem_flags_t flags)
+{
+    UNUSED_ARG(as);
+    UNUSED_ARG(va);
+    UNUSED_ARG(ppages);
+    UNUSED_ARG(num_pages);
+    UNUSED_ARG(flags);
+
+    ERROR("Trying to recolor section but there is no coloring implementation\n");
+}
+
+/**
+ * Called after mem_map installs new (previously invalid) PTEs, before the
+ * address space locks are released. Architectures whose page-table walkers may
+ * cache invalid entries must override this to make the new mappings visible.
+ * The default is a no-op: Armv8, for instance, forbids caching invalid
+ * translations, so an invalid->valid transition needs no TLB maintenance.
+ */
+__attribute__((weak)) void mem_arch_map_sync_tlbs(struct addr_space* as, vaddr_t va,
+    size_t num_pages)
+{
+    UNUSED_ARG(as);
+    UNUSED_ARG(va);
+    UNUSED_ARG(num_pages);
+}
+
+#ifndef CONFIG_MEM_STATIC_ALLOC
+
+struct list page_pool_list;
 
 static bool pp_bitmap_alloc(size_t pool_num_pages, bitmap_t** bitmap)
 {
@@ -319,26 +369,6 @@ static bool pp_init(struct page_pool* pool, paddr_t base, size_t size)
     return true;
 }
 
-static bool mem_vm_img_in_phys_rgn(struct vm_config* vm_config)
-{
-    bool img_in_rgn = false;
-
-    for (size_t i = 0; i < vm_config->platform.region_num; i++) {
-        if (vm_config->platform.regions[i].place_phys) {
-            vaddr_t rgn_base = vm_config->platform.regions[i].phys;
-            size_t rgn_size = vm_config->platform.regions[i].size;
-            paddr_t img_base = vm_config->image.load_addr;
-            size_t img_size = vm_config->image.size;
-            if (range_in_range(img_base, img_size, rgn_base, rgn_size)) {
-                img_in_rgn = true;
-                break;
-            }
-        }
-    }
-
-    return img_in_rgn;
-}
-
 static bool mem_hyp_image_no_load_reserved;
 
 static bool mem_range_in_affine_region(paddr_t base, size_t size)
@@ -568,33 +598,6 @@ __attribute__((weak)) void mem_color_hypervisor(const paddr_t load_addr,
             "it\n");
 }
 
-__attribute__((weak)) bool mem_map_reclr(struct addr_space* as, vaddr_t va, struct ppages* ppages,
-    size_t num_pages, mem_flags_t flags)
-{
-    UNUSED_ARG(as);
-    UNUSED_ARG(va);
-    UNUSED_ARG(ppages);
-    UNUSED_ARG(num_pages);
-    UNUSED_ARG(flags);
-
-    ERROR("Trying to recolor section but there is no coloring implementation\n");
-}
-
-/**
- * Called after mem_map installs new (previously invalid) PTEs, before the
- * address space locks are released. Architectures whose page-table walkers may
- * cache invalid entries must override this to make the new mappings visible.
- * The default is a no-op: Armv8, for instance, forbids caching invalid
- * translations, so an invalid->valid transition needs no TLB maintenance.
- */
-__attribute__((weak)) void mem_arch_map_sync_tlbs(struct addr_space* as, vaddr_t va,
-    size_t num_pages)
-{
-    UNUSED_ARG(as);
-    UNUSED_ARG(va);
-    UNUSED_ARG(num_pages);
-}
-
 __attribute__((weak)) bool pp_alloc_clr(struct page_pool* pool, size_t num_pages, colormap_t colors,
     struct ppages* ppages)
 {
@@ -665,3 +668,173 @@ void mem_init(void)
     /* Wait for master core to initialize memory management */
     cpu_sync_and_clear_msgs(&cpu_glb_sync);
 }
+
+#else /* CONFIG_MEM_STATIC_ALLOC */
+
+/**
+ * Static allocation only: there is no page allocator. Everything the hypervisor needs is statically
+ * sized from the configuration and all vm and shared memory is placed explicitly, so initialization
+ * only has to check that the static layout is consistent.
+ */
+
+struct ppages mem_alloc_ppages(colormap_t colors, size_t num_pages, bool aligned)
+{
+    UNUSED_ARG(colors);
+    UNUSED_ARG(num_pages);
+    UNUSED_ARG(aligned);
+
+    WARNING("page allocation is not available (CONFIG_MEM_STATIC_ALLOC)\n");
+    return (struct ppages){ .num_pages = 0 };
+}
+
+void* mem_alloc_page(size_t num_pages, as_sec_t sec, bool phys_aligned)
+{
+    UNUSED_ARG(num_pages);
+    UNUSED_ARG(sec);
+    UNUSED_ARG(phys_aligned);
+
+    ERROR("page allocation is not available (CONFIG_MEM_STATIC_ALLOC)\n");
+    return NULL;
+}
+
+struct mem_range {
+    paddr_t base;
+    size_t size;
+};
+
+/**
+ * Enumerates every physical range statically claimed by the hypervisor or the configuration:
+ * the hypervisor image, the cpu structures in coupled memory, the vm images not contained in one of
+ * the vm's own regions, the vm regions and the shared memory objects.
+ */
+static bool mem_static_range_get(size_t index, struct mem_range* range)
+{
+    size_t i = 0;
+    size_t image_load_size = (size_t)(&_image_load_end - &_image_start);
+
+    if (index == i++) {
+        range->base = img_addr;
+        range->size = image_load_size;
+        return true;
+    }
+
+    if (DEFINED(MEM_NON_UNIFIED)) {
+        if (index == i++) {
+            range->base = (paddr_t)&_data_vma_start;
+            range->size = (size_t)(&_image_end - &_data_vma_start);
+            return true;
+        }
+    } else {
+        if (index == i++) {
+            size_t vm_image_size = (size_t)(&_vm_image_end - &_vm_image_start);
+            range->base = img_addr + image_load_size + vm_image_size;
+            range->size = (size_t)(&_image_end - &_image_load_end);
+            return true;
+        }
+    }
+
+#ifdef PLAT_HAS_TCM
+    /* The cpu structures placed in coupled memory; the others are inside the image's RAM */
+#ifdef MEM_NON_UNIFIED
+    paddr_t hyp_ram_start = (paddr_t)&_data_vma_start;
+#else
+    paddr_t hyp_ram_start = (paddr_t)&_image_start;
+#endif
+    for (cpuid_t cpuid = 0; cpuid < platform.cpu_num; cpuid++) {
+        if (range_in_range(cpu_base_tbl[cpuid], sizeof(struct cpu), hyp_ram_start,
+                (size_t)((paddr_t)&_image_end - hyp_ram_start))) {
+            continue;
+        }
+        if (index == i++) {
+            range->base = cpu_base_tbl[cpuid];
+            range->size = sizeof(struct cpu);
+            return true;
+        }
+    }
+#endif
+
+    for (size_t vm_id = 0; vm_id < config.vmlist_size; vm_id++) {
+        struct vm_config* vm_cfg = &config.vmlist[vm_id];
+
+        if (!mem_vm_img_in_phys_rgn(vm_cfg)) {
+            if (index == i++) {
+                range->base = vm_cfg->image.load_addr;
+                range->size = vm_cfg->image.size;
+                return true;
+            }
+        }
+
+        for (size_t j = 0; j < vm_cfg->platform.region_num; j++) {
+            struct vm_mem_region* reg = &vm_cfg->platform.regions[j];
+            if (reg->place_phys) {
+                if (index == i++) {
+                    range->base = reg->phys;
+                    range->size = reg->size;
+                    return true;
+                }
+            }
+        }
+    }
+
+    for (size_t j = 0; j < config.shmemlist_size; j++) {
+        struct shmem* shmem = &config.shmemlist[j];
+        if (shmem->place_phys) {
+            if (index == i++) {
+                range->base = shmem->phys;
+                range->size = shmem->size;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+static bool mem_range_in_platform(struct mem_range* range)
+{
+    for (size_t i = 0; i < platform.region_num; i++) {
+        struct mem_region* reg = &platform.regions[i];
+        if (range_in_range(range->base, range->size, reg->base, reg->size)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static void mem_static_check(void)
+{
+    struct mem_range a;
+    struct mem_range b;
+
+    for (size_t i = 0; mem_static_range_get(i, &a); i++) {
+        if (a.size == 0U) {
+            continue;
+        }
+        if (!mem_range_in_platform(&a)) {
+            ERROR("static memory range [0x%lx, 0x%lx) is outside platform memory\n", a.base,
+                a.base + a.size);
+        }
+        for (size_t j = i + 1; mem_static_range_get(j, &b); j++) {
+            if ((b.size != 0U) && range_overlap_range(a.base, a.size, b.base, b.size)) {
+                ERROR("static memory ranges [0x%lx, 0x%lx) and [0x%lx, 0x%lx) overlap\n", a.base,
+                    a.base + a.size, b.base, b.base + b.size);
+            }
+        }
+    }
+}
+
+void mem_init(void)
+{
+    mem_prot_init();
+
+    if (cpu_is_master()) {
+        cache_enumerate();
+        config_init();
+        mem_static_check();
+    }
+
+    /* Wait for master core to validate the static memory layout */
+    cpu_sync_and_clear_msgs(&cpu_glb_sync);
+}
+
+#endif /* CONFIG_MEM_STATIC_ALLOC */
