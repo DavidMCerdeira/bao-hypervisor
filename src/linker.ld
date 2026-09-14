@@ -17,11 +17,11 @@ SECTIONS
 	_image_start = ABSOLUTE(.);
 
 	.boot : {
-		*(.boot)
+		KEEP(*(.boot))
 	}
 
 	.text :  {
-		*(.text)
+		*(.text .text.*)
 	}
 
     . = ALIGN(PAGE_SIZE); /* start RO sections in separate page */
@@ -45,14 +45,15 @@ SECTIONS
 		*(.sdata .sdata.* .sdata2.*)
 	}
 
+	/* Referenced only through linker symbols: keep them from section garbage collection */
 	.ipi_cpumsg_handlers : {
 		ipi_cpumsg_handlers = .;
-		*(.ipi_cpumsg_handlers)
+		KEEP(*(.ipi_cpumsg_handlers))
 	}
 
 	.ipi_cpumsg_handlers_id : {
 		_ipi_cpumsg_handlers_id_start = .;
-		*(.ipi_cpumsg_handlers_id)
+		KEEP(*(.ipi_cpumsg_handlers_id))
         _ipi_cpumsg_handlers_id_end = .;
 	}
 
@@ -63,7 +64,7 @@ SECTIONS
 		 * This section holds data initialized and used during early stages of the boot that can't
 		 * be later rewritten during the copy of data sections from non-volatile memory
 		 */
-		*(.datanocopy)
+		KEEP(*(.datanocopy))
 		/**
 		 * Ensure the loadable portion of the image (_image_load_end) is page-aligned by adding
 		 * padding if necessary.
@@ -118,7 +119,7 @@ SECTIONS
 
 	.glb_page_tables (NOLOAD) : ALIGN(PAGE_SIZE) {
 		_page_tables_start = .;
-		*(.glb_page_tables)
+		KEEP(*(.glb_page_tables))
 		_page_tables_end = .;
 	}
 

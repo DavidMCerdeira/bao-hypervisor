@@ -487,11 +487,12 @@ endif
 
 override CFLAGS+=-O$(OPTIMIZATIONS) -Wall -Werror -Wextra $(cflags_warns) \
 	-ffreestanding -std=c11 -fno-pic -fno-pie \
+	-ffunction-sections -fdata-sections \
 	$(arch-cflags) $(platform-cflags) $(CPPFLAGS) $(debug_flags)
 
 override ASFLAGS+=$(CFLAGS) $(arch-asflags) $(platform-asflags)
 
-override LDFLAGS+=-build-id=none -nostdlib --fatal-warnings \
+override LDFLAGS+=-build-id=none -nostdlib --fatal-warnings --gc-sections \
 	--defsym=$(version)=0 \
 	-z common-page-size=$(PAGE_SIZE) -z max-page-size=$(PAGE_SIZE) \
 	-no-pie \
