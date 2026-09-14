@@ -179,6 +179,7 @@ static void vm_init_mem_regions(struct vm* vm, const struct vm_config* vm_config
     }
 }
 
+#ifdef CONFIG_IPC
 static void vm_init_ipc(struct vm* vm, const struct vm_config* vm_config)
 {
     vm->ipc_num = vm_config->platform.ipc_num;
@@ -219,6 +220,7 @@ static void vm_init_ipc(struct vm* vm, const struct vm_config* vm_config)
         vm_map_mem_region(vm, &reg);
     }
 }
+#endif /* CONFIG_IPC */
 
 static void vm_init_dev(struct vm* vm, const struct vm_config* vm_config)
 {
@@ -419,7 +421,9 @@ struct vm* vm_init(struct vm* vm, struct cpu_synctoken* vm_init_sync,
     if (master) {
         vm_init_mem_regions(vm, vm_config);
         vm_init_dev(vm, vm_config);
+#ifdef CONFIG_IPC
         vm_init_ipc(vm, vm_config);
+#endif
 #ifdef CONFIG_REMIO
         vm_init_remio(vm, vm_config);
 #endif

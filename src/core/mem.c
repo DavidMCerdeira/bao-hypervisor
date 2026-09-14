@@ -438,12 +438,14 @@ static void mem_init_reserved(void)
         }
     }
 
+#ifdef CONFIG_SHMEM
     for (size_t i = 0; i < config.shmemlist_size; i++) {
         struct shmem* shmem = &config.shmemlist[i];
         if (shmem->place_phys) {
             shmem->reserved = mem_reserve_affine(shmem->phys, shmem->size);
         }
     }
+#endif
 }
 
 static bool mem_check_reserved(void)
@@ -473,6 +475,7 @@ static bool mem_check_reserved(void)
         }
     }
 
+#ifdef CONFIG_SHMEM
     for (size_t i = 0; i < config.shmemlist_size; i++) {
         struct shmem* shmem = &config.shmemlist[i];
         if (shmem->place_phys) {
@@ -481,6 +484,7 @@ static bool mem_check_reserved(void)
             }
         }
     }
+#endif
 
     return true;
 }
@@ -519,6 +523,7 @@ static void mem_reserve_physical_memory(struct page_pool* pool)
         }
     }
 
+#ifdef CONFIG_SHMEM
     for (size_t i = 0; i < config.shmemlist_size; i++) {
         struct shmem* shmem = &config.shmemlist[i];
         if (shmem->place_phys && !shmem->reserved) {
@@ -530,6 +535,7 @@ static void mem_reserve_physical_memory(struct page_pool* pool)
             }
         }
     }
+#endif
 }
 
 static bool mem_create_ppools(struct mem_region* root_mem_region)
@@ -776,6 +782,7 @@ static bool mem_static_range_get(size_t index, struct mem_range* range)
         }
     }
 
+#ifdef CONFIG_SHMEM
     for (size_t j = 0; j < config.shmemlist_size; j++) {
         struct shmem* shmem = &config.shmemlist[j];
         if (shmem->place_phys) {
@@ -786,6 +793,7 @@ static bool mem_static_range_get(size_t index, struct mem_range* range)
             }
         }
     }
+#endif
 
     return false;
 }

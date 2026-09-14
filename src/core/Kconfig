@@ -3,9 +3,18 @@
 
 menu "Core features"
 
+config SHMEM
+	bool
+	help
+	  Shared memory objects, the backing of inter-vm communication and
+	  Remote I/O. Selected by the features that use them; without them
+	  the shared memory code and its configuration handling are not
+	  built, and a configuration declaring shared memory is rejected.
+
 config IPC
 	bool "Inter-VM communication"
 	default y
+	select SHMEM
 	help
 	  Inter-VM communication via shared memory
 	  Includes the associated notification hypercalls.
@@ -14,6 +23,7 @@ config REMIO
 	bool "Remote I/O"
 	default n if MCU_MODE
 	default y
+	select SHMEM
 	help
 	  Remote I/O devices: paravirtualised device frontends and backends
 	  bridged between vms over shared memory, with the associated

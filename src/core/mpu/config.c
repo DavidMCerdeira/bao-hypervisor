@@ -19,6 +19,7 @@ void config_mem_prot_init(void)
             config.vmlist[i].platform.regions[j].phys = region_base;
         }
 
+#ifdef CONFIG_IPC
         for (size_t j = 0; j < config.vmlist[i].platform.ipc_num; j++) {
             /**
              * In MPU-based systems, the address of the VM's IPC object and the used must follow a
@@ -31,12 +32,15 @@ void config_mem_prot_init(void)
                 ERROR("IPC base addr must be the same as its shmem base addr.\n");
             }
         }
+#endif
     }
 
+#ifdef CONFIG_SHMEM
     for (size_t i = 0; i < config.shmemlist_size; i++) {
         /**
          * On MPU systems all shared memory regions must be physical regions with 1-to-1 mapping.
          */
         config.shmemlist[i].place_phys = true;
     }
+#endif
 }

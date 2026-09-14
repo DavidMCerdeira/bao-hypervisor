@@ -127,7 +127,7 @@ extern struct config {
         colormap_t colors;
     } hyp;
 
-    /* Definition of shared memory regions to be used by VMs */
+    /* Definition of shared memory regions to be used by VMs (needs CONFIG_SHMEM) */
     size_t shmemlist_size;
     struct shmem* shmemlist;
 

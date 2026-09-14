@@ -80,7 +80,9 @@ void vmm_init()
 {
     vmm_arch_init();
     vmm_io_init();
+#ifdef CONFIG_SHMEM
     shmem_init();
+#endif
 #ifdef CONFIG_REMIO
     remio_init();
 #endif

@@ -4,6 +4,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <config.h>
 
 /* Architecture specific configuration defines generator */
@@ -28,8 +29,36 @@ static size_t remio_dev_num(void)
     return dev_num;
 }
 
+/* A configuration must not rely on features that are not built */
+static void check_features(void)
+{
+#ifndef CONFIG_SHMEM
+    if (config.shmemlist_size > 0) {
+        fprintf(stderr, "configuration declares shared memory but neither CONFIG_IPC nor "
+            "CONFIG_REMIO is enabled\n");
+        exit(1);
+    }
+#endif
+    for (size_t i = 0; i < config.vmlist_size; i++) {
+#ifndef CONFIG_IPC
+        if (config.vmlist[i].platform.ipc_num > 0) {
+            fprintf(stderr, "vm %lu declares ipc objects but CONFIG_IPC is not enabled\n", i);
+            exit(1);
+        }
+#endif
+#ifndef CONFIG_REMIO
+        if (config.vmlist[i].platform.remio_dev_num > 0) {
+            fprintf(stderr, "vm %lu declares Remote I/O devices but CONFIG_REMIO is not enabled\n",
+                i);
+            exit(1);
+        }
+#endif
+    }
+}
+
 int main() {
     size_t vcpu_num = 0;
+    check_features();
     for (size_t i = 0; i < config.vmlist_size; i++) {
         vcpu_num += config.vmlist[i].platform.cpu_num;
     }
