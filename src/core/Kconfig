@@ -43,6 +43,7 @@ config CPU_LOCAL_COPIES
 choice
 	prompt "Hypervisor MPU map"
 	depends on MEM_PROT_MPU
+	default HYP_MPU_MAP_SIMPLE if MCU_MODE
 	default HYP_MPU_MAP_FULL
 	help
 	  How the hypervisor's own address space is described in the MPU.
@@ -84,10 +85,22 @@ config MEM_STATIC_ALLOC
 	  configuration, VM memory and shared memory must be placed
 	  explicitly, and any call to the page allocator fails at runtime.
 
+config MCU_MODE
+	bool "MCU mode"
+	depends on MEM_PROT_MPU
+	select MEM_STATIC_ALLOC
+	help
+	  Minimise the hypervisor memory and MPU footprint for microcontroller
+	  targets: static memory allocation only, the simple hypervisor MPU
+	  map and a 1 KiB hypervisor stack per cpu by default. Toggling it in
+	  menuconfig resets the options it governs to those defaults; they
+	  stay editable afterwards.
+
 config HYP_STACK_SIZE
 	hex "Hypervisor stack size per cpu"
 	depends on MEM_PROT_MPU
 	default 0x200 if ARCH_TRICORE
+	default 0x400 if MCU_MODE
 	default 0x1000
 	help
 	  Size of each cpu's hypervisor stack, part of the cpu structure.
