@@ -122,6 +122,37 @@ config MCU_MODE
 	  menuconfig resets the options it governs to those defaults; they
 	  stay editable afterwards.
 
+choice
+	prompt "Log level"
+	default LOG_LEVEL_ERROR if MCU_MODE
+	default LOG_LEVEL_INFO
+	help
+	  Highest severity class of console messages compiled into the
+	  hypervisor. Messages above the selected level become dead code, so
+	  their strings and formatting calls leave the image. Errors still
+	  halt the cpu at every level.
+
+config LOG_LEVEL_INFO
+	bool "INFO: errors, warnings and informational messages"
+
+config LOG_LEVEL_WARNING
+	bool "WARNING: errors and warnings"
+
+config LOG_LEVEL_ERROR
+	bool "ERROR: errors only"
+
+config LOG_LEVEL_NONE
+	bool "NONE: no console messages"
+
+endchoice
+
+config LOG_LEVEL
+	int
+	default 3 if LOG_LEVEL_INFO
+	default 2 if LOG_LEVEL_WARNING
+	default 1 if LOG_LEVEL_ERROR
+	default 0
+
 config HYP_STACK_SIZE
 	hex "Hypervisor stack size per cpu"
 	depends on MEM_PROT_MPU
