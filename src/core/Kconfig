@@ -108,9 +108,12 @@ config HYP_STACK_SIZE
 
 config IPI_MAX_EVENTS
 	int "Depth of the per-cpu message queue"
+	default 16 if MCU_MODE
 	default 253
 	help
 	  Depth of the per-cpu message queue
-	  The default keeps the cpu interface within a single 4K page.
+	  The default keeps the cpu interface within a single 4K page. In
+	  MCU mode a much smaller queue is enough and keeps the per-cpu
+	  interface out of the way of the memory budget.
 
 endmenu
