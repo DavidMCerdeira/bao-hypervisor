@@ -42,6 +42,11 @@ void cpu_arch_init(cpuid_t cpuid, paddr_t load_addr)
     }
 }
 
+void cpu_arch_wait_for_interrupt(void)
+{
+    __asm__ volatile("wait \n\r" ::: "memory");
+}
+
 void cpu_arch_powerdown(void)
 {
     __asm__ volatile("wait \n\r" ::: "memory");

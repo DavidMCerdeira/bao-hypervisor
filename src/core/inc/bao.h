@@ -45,14 +45,17 @@
 #define WARNING(...) LOG_DISCARD(__VA_ARGS__)
 #endif
 
+/* Halt the calling cpu in its lowest-power wait state; never returns */
+__attribute__((noreturn)) void cpu_halt(void);
+
 #if CONFIG_LOG_LEVEL >= LOG_LEVEL_ERROR
 #define ERROR(...)                                               \
     console_log("BAO ERROR: ", __func__, __LINE__, __VA_ARGS__); \
-    while (true) { };
+    cpu_halt();
 #else
 #define ERROR(...)           \
     LOG_DISCARD(__VA_ARGS__) \
-    while (true) { };
+    cpu_halt();
 #endif
 
 void init(cpuid_t cpu_id);

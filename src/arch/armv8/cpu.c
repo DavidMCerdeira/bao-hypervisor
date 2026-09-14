@@ -24,6 +24,11 @@ unsigned long cpu_id_to_mpidr(cpuid_t id)
     return platform_arch_cpuid_to_mpidr(&platform, id);
 }
 
+void cpu_arch_wait_for_interrupt(void)
+{
+    __asm__ volatile("wfi" ::: "memory");
+}
+
 void cpu_arch_standby()
 {
     cpu_arch_profile_standby();

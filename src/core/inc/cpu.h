@@ -83,6 +83,8 @@ void cpu_powerdown_wakeup(void);
 
 void cpu_arch_init(cpuid_t cpu_id, paddr_t load_addr);
 void cpu_arch_standby(void);
+/* Wait for an interrupt in the architecture's low-power state; returns on wake-up */
+void cpu_arch_wait_for_interrupt(void);
 void cpu_arch_powerdown(void);
 
 extern struct cpuif cpu_interfaces[];

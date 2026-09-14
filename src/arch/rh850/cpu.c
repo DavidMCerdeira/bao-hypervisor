@@ -73,6 +73,11 @@ static void reset_stack_and_jump(void* stack_base, void (*jmp_target)(void))
                      : "lp", "memory");
 }
 
+void cpu_arch_wait_for_interrupt(void)
+{
+    snooze();
+}
+
 void cpu_arch_standby()
 {
     snooze();

@@ -91,6 +91,13 @@ void cpu_msg_handler(void)
     cpu()->handling_msgs = false;
 }
 
+__attribute__((noreturn)) void cpu_halt(void)
+{
+    while (true) {
+        cpu_arch_wait_for_interrupt();
+    }
+}
+
 void cpu_standby(void)
 {
     cpu_arch_standby();

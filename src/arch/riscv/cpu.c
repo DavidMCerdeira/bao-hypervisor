@@ -27,6 +27,11 @@ void cpu_arch_init(cpuid_t cpuid, paddr_t load_addr)
     }
 }
 
+void cpu_arch_wait_for_interrupt(void)
+{
+    __asm__ volatile("wfi\n\t" ::: "memory");
+}
+
 void cpu_arch_standby(void)
 {
     struct sbiret ret = sbi_hart_suspend(SBI_HSM_SUSPEND_RET_DEFAULT, 0, 0);
