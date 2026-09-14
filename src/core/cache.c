@@ -5,6 +5,8 @@
 
 #include <cache.h>
 
+#ifdef MEM_PROT_MMU
+
 static struct cache cache_dscr;
 
 size_t COLOR_NUM = 1;
@@ -47,3 +49,10 @@ void cache_enumerate(void)
     cache_arch_enumerate(&cache_dscr);
     cache_calc_colors(&cache_dscr, PAGE_SIZE);
 }
+
+#else  /* MEM_PROT_MMU */
+
+/* Cache colouring needs address translation; MPU targets have neither colours nor descriptors */
+void cache_enumerate(void) { }
+
+#endif /* MEM_PROT_MMU */

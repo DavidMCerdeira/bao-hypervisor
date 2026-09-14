@@ -19,8 +19,14 @@ struct cache {
     size_t numset[CACHE_MAX_LVL][2];
 };
 
+#ifdef MEM_PROT_MMU
 extern size_t COLOR_NUM;
 extern size_t COLOR_SIZE;
+#else
+/* No cache colouring without address translation */
+#define COLOR_NUM  (1U)
+#define COLOR_SIZE (1U)
+#endif
 
 void cache_enumerate(void);
 void cache_flush_range(vaddr_t base, size_t size);
