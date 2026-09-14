@@ -106,6 +106,14 @@ config HYP_STACK_SIZE
 	  Size of each cpu's hypervisor stack, part of the cpu structure.
 	  Measure the high-water mark on the target before lowering it.
 
+config IRQ_HANDLERS_MAX
+	int "Maximum number of interrupts handled by the hypervisor"
+	default 16
+	help
+	  Size of the table of interrupt handlers the hypervisor registers
+	  for itself (inter-processor interrupts, timers, IOMMU faults).
+	  Guest interrupts are not counted.
+
 config IPI_MAX_EVENTS
 	int "Depth of the per-cpu message queue"
 	default 16 if MCU_MODE

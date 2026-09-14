@@ -13,7 +13,25 @@
 BITMAP_ALLOC(global_interrupt_bitmap, MAX_INTERRUPT_LINES);
 spinlock_t irq_reserve_lock = SPINLOCK_INITVAL;
 
-irq_handler_t interrupt_handlers[MAX_INTERRUPT_HANDLERS];
+/**
+ * The hypervisor handles a handful of interrupts itself, so instead of one slot per interrupt
+ * line the handlers are kept in a small table searched by interrupt id.
+ */
+static struct {
+    irqid_t id;
+    irq_handler_t handler;
+} interrupt_handlers[CONFIG_IRQ_HANDLERS_MAX];
+static size_t interrupt_handler_num;
+
+static irq_handler_t interrupt_handler_find(irqid_t int_id)
+{
+    for (size_t i = 0; i < interrupt_handler_num; i++) {
+        if (interrupt_handlers[i].id == int_id) {
+            return interrupt_handlers[i].handler;
+        }
+    }
+    return NULL;
+}
 
 irqid_t interrupts_ipi_id;
 
@@ -72,7 +90,7 @@ void interrupts_init(void)
 
 static inline bool interrupt_assigned_to_hyp(irqid_t int_id)
 {
-    return (int_id < MAX_INTERRUPT_HANDLERS) && (interrupt_handlers[int_id] != NULL);
+    return (int_id < MAX_INTERRUPT_HANDLERS) && (interrupt_handler_find(int_id) != NULL);
 }
 
 /**
@@ -117,7 +135,7 @@ enum irq_res interrupts_handle(irqid_t int_id)
         return FORWARD_TO_VM;
 
     } else if (interrupt_assigned_to_hyp(int_id)) {
-        interrupt_handlers[int_id](int_id);
+        interrupt_handler_find(int_id)(int_id);
 
         return HANDLED_BY_HYP;
 
@@ -153,8 +171,13 @@ irqid_t interrupts_reserve(irqid_t pint_id, irq_handler_t handler)
 
         irqid_t tmp_id = interrupts_arch_reserve(pint_id);
         if ((tmp_id != INVALID_IRQID) && (tmp_id < MAX_INTERRUPT_HANDLERS)) {
+            if (interrupt_handler_num >= CONFIG_IRQ_HANDLERS_MAX) {
+                ERROR("hypervisor interrupt handler table full (CONFIG_IRQ_HANDLERS_MAX)\n");
+            }
             int_id = tmp_id;
-            interrupt_handlers[int_id] = handler;
+            interrupt_handlers[interrupt_handler_num].id = int_id;
+            interrupt_handlers[interrupt_handler_num].handler = handler;
+            interrupt_handler_num++;
         }
     }
     spin_unlock(&irq_reserve_lock);
