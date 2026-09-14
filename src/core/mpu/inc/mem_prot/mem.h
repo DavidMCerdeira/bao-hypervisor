@@ -16,7 +16,8 @@
 #include <arch/mem.h>
 #include <arch/spinlock.h>
 
-#define VMPU_NUM_ENTRIES 64
+/* A virtual MPU never holds more regions than the physical MPU can map */
+#define VMPU_NUM_ENTRIES MPU_ARCH_MAX_NUM_ENTRIES
 struct mp_region {
     vaddr_t base;
     size_t size;
