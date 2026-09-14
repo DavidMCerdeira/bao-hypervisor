@@ -376,6 +376,8 @@ gens+=$(kconfig_auto_hdr)
 gens+=$(asm_defs_hdr)
 
 config_def_generator_src:=$(scripts_dir)/config_defs_gen.c
+config_arch_def_generator_src:=$(wildcard $(scripts_dir)/arch/$(ARCH)/config_defs_gen.c)
+config_def_generator_src+=$(config_arch_def_generator_src)
 config_def_generator:=$(if $(O),$(config_build_dir),$(scripts_build_dir))/config_defs_gen
 config_defs:=$(config_build_dir)/inc/config_defs_gen.h
 gens+=$(config_def_generator) $(config_defs)
@@ -596,9 +598,10 @@ $(config_dep): $(config_src)
 	@$(cc) $(CFLAGS) $(CPPFLAGS) -S $(config_src) -o - | grep ".incbin" | \
 		awk '{ gsub("\"", "", $$2); print "$(patsubst %.d, %.o, $@): " $$2 }' >> $@
 
-$(config_def_generator): $(config_def_generator_src) $(config_src)
+# The configuration generator also reads the platform description (e.g. the GIC line count)
+$(config_def_generator): $(config_def_generator_src) $(config_src) $(platform_description)
 	@echo "Compiling generator	$(patsubst $(cur_dir)/%,%, $@)"
-	@$(HOST_CC) $^ $(build_macros) $(HOST_CPPFLAGS) -DGENERATING_DEFS \
+	@$(HOST_CC) $^ $(build_macros) $(HOST_CPPFLAGS) -DGENERATING_DEFS -D$(ARCH) \
 		$(addprefix -I, $(inc_dirs)) -o $@
 
 $(config_defs): $(config_def_generator)

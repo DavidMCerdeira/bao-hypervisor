@@ -9,6 +9,7 @@
 #include <bao.h>
 #include <arch/gic.h>
 #include <list.h>
+#include <config_defs.h>
 
 struct vm;
 struct vcpu;
@@ -52,7 +53,8 @@ struct vgic_int {
 };
 
 struct vgicd {
-    struct vgic_int* interrupts;
+    /* Interrupt descriptors, statically sized for the largest vm in the configuration */
+    struct vgic_int interrupts[CONFIG_VGIC_INT_NUM];
     spinlock_t lock;
     size_t int_num;
     uint32_t CTLR;

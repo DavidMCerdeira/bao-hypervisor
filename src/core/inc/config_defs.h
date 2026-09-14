@@ -12,6 +12,7 @@
 #define CONFIG_VM_NUM        1
 #define CONFIG_HYP_BASE_ADDR 0
 #define CONFIG_REMIO_DEV_NUM 0
+#define CONFIG_VGIC_INT_NUM  1
 
 #else /* GENERATING_DEFS */
 

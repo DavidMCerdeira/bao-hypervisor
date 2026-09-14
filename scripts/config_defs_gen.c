@@ -6,6 +6,11 @@
 #include <stdio.h>
 #include <config.h>
 
+/* Architecture specific configuration defines generator */
+__attribute__((weak)) void arch_config_defs(void){
+    return;
+}
+
 static size_t remio_dev_num(void)
 {
     size_t dev_num = 0;
@@ -43,6 +48,8 @@ int main() {
     }
 
     printf("#define CONFIG_REMIO_DEV_NUM %ld\n", remio_dev_num());
+
+    arch_config_defs();
 
     return 0;
  }

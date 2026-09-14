@@ -26,6 +26,7 @@ struct platform platform = {
     .arch = {
         .gic = {
             .gicd_addr = 0xF0000000,
+            .interrupt_num = GIC_MAX_INTERUPTS,
             .gicr_addr = 0xF0100000,
             .maintenance_id = 25,
         },

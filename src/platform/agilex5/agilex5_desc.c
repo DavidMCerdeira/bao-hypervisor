@@ -30,6 +30,7 @@ struct platform platform = {
             .gich_addr = 0x0,
             .gicv_addr = 0x0,
             .gicd_addr = 0x1d000000,
+            .interrupt_num = GIC_MAX_INTERUPTS,
             .gicr_addr = 0x1d060000,
             .maintenance_id = 25,
         },

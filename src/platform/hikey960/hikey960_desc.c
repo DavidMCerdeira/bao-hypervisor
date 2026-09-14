@@ -27,6 +27,7 @@ struct platform platform = {
         .gic = {
             /* check gic 400 manual */ 
             .gicd_addr = 0xE82B1000,
+            .interrupt_num = GIC_MAX_INTERUPTS,
             .gicc_addr = 0xE82B2000,
             .gich_addr = 0xE82B4000,
             .gicv_addr = 0xE82B6000,

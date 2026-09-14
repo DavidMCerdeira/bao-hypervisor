@@ -1235,6 +1235,12 @@ size_t vgic_get_itln(const struct vgic_dscrp* vgic_dscrp)
     if (vgic_dscrp->interrupt_num > GIC_MAX_PPIS) {
         vtyper_itln =
             (ALIGN(vgic_dscrp->interrupt_num, 32) / 32 - 1) & BIT32_MASK(0, GICD_TYPER_ITLN_LEN);
+    } else if (platform.arch.gic.interrupt_num > GIC_MAX_PPIS) {
+        /* The platform's line count bounds the static vgic storage, and so the hardware count */
+        size_t plat_itln = (ALIGN(platform.arch.gic.interrupt_num, 32) / 32) - 1;
+        if (vtyper_itln > plat_itln) {
+            vtyper_itln = plat_itln;
+        }
     }
 
     return vtyper_itln;

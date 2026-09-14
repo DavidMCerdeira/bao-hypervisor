@@ -344,11 +344,8 @@ void vgic_init(struct vm* vm, const struct vgic_dscrp* vgic_dscrp)
     vm->mut->arch.vgicd.IIDR = gicd->IIDR;
     vm->mut->arch.vgicd.lock = SPINLOCK_INITVAL;
 
-    size_t vgic_int_size = vm->mut->arch.vgicd.int_num * sizeof(struct vgic_int);
-    vm->mut->arch.vgicd.interrupts =
-        mem_alloc_page(NUM_PAGES(vgic_int_size), SEC_HYP_VM, MEM_ALIGN_NOT_REQ);
-    if (vm->mut->arch.vgicd.interrupts == NULL) {
-        ERROR("failed to alloc vgic\n");
+    if (vm->mut->arch.vgicd.int_num > CONFIG_VGIC_INT_NUM) {
+        ERROR("vgic interrupt storage too small for vm %d\n", vm->id);
     }
 
     for (irqid_t i = 0; i < vm->mut->arch.vgicd.int_num; i++) {
