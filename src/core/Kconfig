@@ -114,6 +114,16 @@ config IRQ_HANDLERS_MAX
 	  for itself (inter-processor interrupts, timers, IOMMU faults).
 	  Guest interrupts are not counted.
 
+config MPU_SHARED_REGION_POOL_SIZE
+	int "MPU region broadcast pool size"
+	depends on MEM_PROT_MPU
+	default 16 if MCU_MODE
+	default 128
+	help
+	  Number of in-flight region insert/remove/update messages between
+	  cpus. Each vm region mapped by a vm's master cpu takes one entry
+	  per other cpu of the vm until that cpu handles it.
+
 config IPI_MAX_EVENTS
 	int "Depth of the per-cpu message queue"
 	default 16 if MCU_MODE

@@ -25,11 +25,7 @@ bool mem_unmap_range(struct addr_space* as, vaddr_t vaddr, size_t size, bool bro
 
 enum { MEM_INSERT_REGION, MEM_REMOVE_REGION, MEM_UPDATE_REGION };
 
-#define SHARED_REGION_POOL_SIZE_DEFAULT (128)
-#ifndef SHARED_REGION_POOL_SIZE
-#define SHARED_REGION_POOL_SIZE SHARED_REGION_POOL_SIZE_DEFAULT
-#endif
-OBJPOOL_ALLOC(shared_region_pool, struct shared_region, SHARED_REGION_POOL_SIZE);
+OBJPOOL_ALLOC(shared_region_pool, struct shared_region, CONFIG_MPU_SHARED_REGION_POOL_SIZE);
 
 static inline struct mpe* mem_vmpu_get_entry(struct addr_space* as, mpid_t mpid)
 {
