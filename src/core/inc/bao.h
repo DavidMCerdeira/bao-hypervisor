@@ -24,28 +24,30 @@
 #define LOG_LEVEL_WARNING (2)
 #define LOG_LEVEL_INFO    (3)
 
-#define LOG_DISCARD(...)                 \
-    do {                                 \
-        if (false) {                     \
-            console_printk(__VA_ARGS__); \
-        }                                \
+/* Messages carry the function and line they come from; discarded ones keep their arguments checked
+ */
+#define LOG_DISCARD(...)                                      \
+    do {                                                      \
+        if (false) {                                          \
+            console_log("", __func__, __LINE__, __VA_ARGS__); \
+        }                                                     \
     } while (false);
 
 #if CONFIG_LOG_LEVEL >= LOG_LEVEL_INFO
-#define INFO(...) console_printk("BAO INFO: " __VA_ARGS__);
+#define INFO(...) console_log("BAO INFO: ", __func__, __LINE__, __VA_ARGS__);
 #else
 #define INFO(...) LOG_DISCARD(__VA_ARGS__)
 #endif
 
 #if CONFIG_LOG_LEVEL >= LOG_LEVEL_WARNING
-#define WARNING(...) console_printk("BAO WARNING: " __VA_ARGS__);
+#define WARNING(...) console_log("BAO WARNING: ", __func__, __LINE__, __VA_ARGS__);
 #else
 #define WARNING(...) LOG_DISCARD(__VA_ARGS__)
 #endif
 
 #if CONFIG_LOG_LEVEL >= LOG_LEVEL_ERROR
-#define ERROR(...)                             \
-    console_printk("BAO ERROR: " __VA_ARGS__); \
+#define ERROR(...)                                               \
+    console_log("BAO ERROR: ", __func__, __LINE__, __VA_ARGS__); \
     while (true) { };
 #else
 #define ERROR(...)           \

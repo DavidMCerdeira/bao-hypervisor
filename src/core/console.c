@@ -54,18 +54,47 @@ void console_write(const char* buf, size_t n)
 #define PRINTF_BUFFER_LEN (256)
 static char console_bufffer[PRINTF_BUFFER_LEN];
 
-__attribute__((format(printf, 1, 2))) void console_printk(const char* fmt, ...)
+/* Formats and writes a message; the caller holds the console lock */
+static void console_vprintk(const char* fmt, va_list* args)
 {
-    va_list args;
     size_t chars_writen;
     const char* fmt_it = fmt;
 
-    va_start(args, fmt);
-    spin_lock(&console_lock);
     while (*fmt_it != '\0') {
-        chars_writen = vsnprintk(console_bufffer, PRINTF_BUFFER_LEN, &fmt_it, &args);
+        chars_writen = vsnprintk(console_bufffer, PRINTF_BUFFER_LEN, &fmt_it, args);
         console_write(console_bufffer, min(PRINTF_BUFFER_LEN, chars_writen));
     }
+}
+
+__attribute__((format(printf, 1, 2))) static void console_printk_locked(const char* fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    console_vprintk(fmt, &args);
+    va_end(args);
+}
+
+__attribute__((format(printf, 1, 2))) void console_printk(const char* fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    spin_lock(&console_lock);
+    console_vprintk(fmt, &args);
+    spin_unlock(&console_lock);
+    va_end(args);
+}
+
+__attribute__((format(printf, 4, 5))) void console_log(const char* prefix, const char* func,
+    int line, const char* fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    spin_lock(&console_lock);
+    console_printk_locked("%s%s:%d: ", prefix, func, line);
+    console_vprintk(fmt, &args);
     spin_unlock(&console_lock);
     va_end(args);
 }

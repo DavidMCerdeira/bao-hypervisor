@@ -11,5 +11,7 @@
 void console_init(void);
 void console_write(const char* buf, size_t n);
 void console_printk(const char* fmt, ...);
+/* Prints prefix, "func:line: " and the formatted message as one console transaction */
+void console_log(const char* prefix, const char* func, int line, const char* fmt, ...);
 
 #endif /* __CONSOLE_H__ */
