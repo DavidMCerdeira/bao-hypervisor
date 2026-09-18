@@ -205,6 +205,23 @@ def peek_platform():
     return peek.syms['PLATFORM'].str_value
 
 
+def governed_by(kconf, sym):
+    """Symbols and choices with a default conditioned on sym (a mode option)."""
+    governed = []
+    for item in list(kconf.unique_defined_syms) + list(kconf.unique_choices):
+        if item is not sym and \
+                any(sym in kconfiglib.expr_items(cond) for _, cond in item.defaults):
+            governed.append(item)
+    return governed
+
+
+def reapply_governed_defaults(kconf, sym):
+    """Drop the saved values of what sym governs so they show its new defaults;
+    they remain editable afterwards."""
+    for item in governed_by(kconf, sym):
+        item.unset_value()
+
+
 def run_menuconfig():
     import menuconfig
 
@@ -218,7 +235,16 @@ def run_menuconfig():
 
     def pin_aware_change_node(node):
         # The platform of a pinned build directory cannot be switched
-        return True if pinned(node.item) else change_node(node)
+        if pinned(node.item):
+            return True
+        item = node.item
+        before = item.str_value if isinstance(item, kconfiglib.Symbol) else None
+        changed = change_node(node)
+        # Toggling a mode option (one that conditions other options' defaults)
+        # re-applies those defaults, as if the options had never been set
+        if before is not None and item.str_value != before:
+            reapply_governed_defaults(menuconfig._kconf, item)
+        return changed
 
     def blank_aware_node_str(node):
         # Empty comments separate option and fact blocks in the menu view
