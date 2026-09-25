@@ -197,13 +197,13 @@ void sbi_msg_handler(uint32_t event, uint64_t data)
             csrs_hvip_set(HIP_VSSIP);
             break;
         case HART_START: {
-            spin_lock(&cpu()->vcpu.arch.sbi_ctx.lock);
-            if (cpu()->vcpu.arch.sbi_ctx.state == START_PENDING) {
-                vcpu_arch_reset(&cpu()->vcpu, cpu()->vcpu.arch.sbi_ctx.start_addr);
-                vcpu_writereg(&cpu()->vcpu, REG_A1, cpu()->vcpu.arch.sbi_ctx.priv);
-                cpu()->vcpu.arch.sbi_ctx.state = STARTED;
+            spin_lock(&cpu()->vcpu.pub->arch.sbi_ctx.lock);
+            if (cpu()->vcpu.pub->arch.sbi_ctx.state == START_PENDING) {
+                vcpu_arch_reset(&cpu()->vcpu, cpu()->vcpu.pub->arch.sbi_ctx.start_addr);
+                vcpu_writereg(&cpu()->vcpu, REG_A1, cpu()->vcpu.pub->arch.sbi_ctx.priv);
+                cpu()->vcpu.pub->arch.sbi_ctx.state = STARTED;
             }
-            spin_unlock(&cpu()->vcpu.arch.sbi_ctx.lock);
+            spin_unlock(&cpu()->vcpu.pub->arch.sbi_ctx.lock);
         } break;
         default:
             WARNING("unknown sbi msg\n");
@@ -340,7 +340,7 @@ static struct sbiret sbi_hsm_start_handler(void)
     if (vhart_id == cpu()->vcpu.id) {
         ret.error = SBI_ERR_ALREADY_AVAILABLE;
     } else {
-        struct vcpu* vcpu = vm_get_vcpu(cpu()->vcpu.vm, vhart_id);
+        struct vcpu_public* vcpu = vm_get_vcpu(cpu()->vcpu.vm, vhart_id);
         if (vcpu == NULL) {
             ret.error = SBI_ERR_INVALID_PARAM;
         } else {
@@ -378,7 +378,7 @@ static struct sbiret sbi_hsm_status_handler(void)
 {
     struct sbiret ret;
     vcpuid_t vhart_id = vcpu_readreg(&cpu()->vcpu, REG_A0);
-    struct vcpu* vhart = vm_get_vcpu(cpu()->vcpu.vm, vhart_id);
+    struct vcpu_public* vhart = vm_get_vcpu(cpu()->vcpu.vm, vhart_id);
 
     if (vhart != NULL) {
         ret.error = SBI_SUCCESS;
@@ -396,8 +396,8 @@ static struct sbiret sbi_hsm_suspend_handler(void)
     uint32_t suspend_type = (uint32_t)vcpu_readreg(&cpu()->vcpu, REG_A0);
     bool try_suspend = false;
 
-    spin_lock(&cpu()->vcpu.arch.sbi_ctx.lock);
-    if (cpu()->vcpu.arch.sbi_ctx.state != STARTED) {
+    spin_lock(&cpu()->vcpu.pub->arch.sbi_ctx.lock);
+    if (cpu()->vcpu.pub->arch.sbi_ctx.state != STARTED) {
         ret.error = SBI_ERR_FAILURE;
     } else {
         if (suspend_type & SBI_HSM_SUSP_NON_RET_BIT) {
@@ -411,7 +411,7 @@ static struct sbiret sbi_hsm_suspend_handler(void)
             try_suspend = true;
         }
     }
-    spin_unlock(&cpu()->vcpu.arch.sbi_ctx.lock);
+    spin_unlock(&cpu()->vcpu.pub->arch.sbi_ctx.lock);
 
     if (try_suspend) {
         ret = sbi_hart_suspend(suspend_type, 0, 0);

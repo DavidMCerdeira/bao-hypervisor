@@ -35,6 +35,11 @@ struct vm_arch {
 };
 
 struct vcpu_arch {
+    EMPTY_STRUCT_FIELDS
+};
+
+/* Vcpu state other cpus reach: the boot control register releases other cores */
+struct vcpu_arch_public {
     bool started;
 };
 

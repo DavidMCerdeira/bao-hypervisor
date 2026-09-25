@@ -185,23 +185,22 @@ void vgic_init(struct vm* vm, const struct vgic_dscrp* vgic_dscrp)
 
 void vgic_cpu_init(struct vcpu* vcpu)
 {
-    struct vcpu* owner = vm_get_vcpu(vcpu->vm, vcpu->id);
     for (irqid_t i = 0; i < GIC_CPU_PRIV; i++) {
-        vcpu->arch.vgic_priv.interrupts[i].owner = owner;
-        vcpu->arch.vgic_priv.interrupts[i].lock = SPINLOCK_INITVAL;
-        vcpu->arch.vgic_priv.interrupts[i].id = i;
-        vcpu->arch.vgic_priv.interrupts[i].state = INV;
-        vcpu->arch.vgic_priv.interrupts[i].prio = GIC_LOWEST_PRIO;
-        vcpu->arch.vgic_priv.interrupts[i].cfg = 0;
-        vcpu->arch.vgic_priv.interrupts[i].sgi.act = 0;
-        vcpu->arch.vgic_priv.interrupts[i].sgi.pend = 0;
-        vcpu->arch.vgic_priv.interrupts[i].hw = false;
-        vcpu->arch.vgic_priv.interrupts[i].in_lr = false;
-        vcpu->arch.vgic_priv.interrupts[i].enabled = false;
+        vcpu->pub->arch.vgic_priv.interrupts[i].owner = vcpu->pub;
+        vcpu->pub->arch.vgic_priv.interrupts[i].lock = SPINLOCK_INITVAL;
+        vcpu->pub->arch.vgic_priv.interrupts[i].id = i;
+        vcpu->pub->arch.vgic_priv.interrupts[i].state = INV;
+        vcpu->pub->arch.vgic_priv.interrupts[i].prio = GIC_LOWEST_PRIO;
+        vcpu->pub->arch.vgic_priv.interrupts[i].cfg = 0;
+        vcpu->pub->arch.vgic_priv.interrupts[i].sgi.act = 0;
+        vcpu->pub->arch.vgic_priv.interrupts[i].sgi.pend = 0;
+        vcpu->pub->arch.vgic_priv.interrupts[i].hw = false;
+        vcpu->pub->arch.vgic_priv.interrupts[i].in_lr = false;
+        vcpu->pub->arch.vgic_priv.interrupts[i].enabled = false;
     }
 
     for (size_t i = 0; i < GIC_MAX_SGIS; i++) {
-        vcpu->arch.vgic_priv.interrupts[i].enabled = true;
+        vcpu->pub->arch.vgic_priv.interrupts[i].enabled = true;
     }
 
     list_init(&vcpu->arch.vgic_spilled);

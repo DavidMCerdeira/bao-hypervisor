@@ -31,6 +31,10 @@ struct vcpu_arch {
     EMPTY_STRUCT_FIELDS
 };
 
+struct vcpu_arch_public {
+    EMPTY_STRUCT_FIELDS
+};
+
 struct arch_regs {
     union {
         struct lower_context lower_ctx;

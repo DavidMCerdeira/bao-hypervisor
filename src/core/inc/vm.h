@@ -76,8 +76,8 @@ struct vm {
     struct cpu_synctoken sync;
     cpuid_t master;
 
-    /* The vm's vcpus, indexed by vcpu id, each at the address the vm's cpus reach it */
-    struct vcpu* vcpus[PLAT_CPU_NUM];
+    /* The vm's vcpus, indexed by vcpu id: the public part of each, valid on every cpu */
+    struct vcpu_public* vcpus[PLAT_CPU_NUM];
     size_t cpu_num;
     cpumap_t cpus;
 
@@ -112,7 +112,8 @@ void vm_msg_broadcast(struct vm* vm, struct cpu_msg* msg);
 cpumap_t vm_translate_to_pcpu_mask(struct vm* vm, cpumap_t mask, size_t len);
 cpumap_t vm_translate_to_vcpu_mask(struct vm* vm, cpumap_t mask, size_t len);
 
-static inline struct vcpu* vm_get_vcpu(struct vm* vm, vcpuid_t vcpuid)
+/* The public part of one of the vm's vcpus; the private part belongs to the cpu running it */
+static inline struct vcpu_public* vm_get_vcpu(struct vm* vm, vcpuid_t vcpuid)
 {
     if (vcpuid < vm->cpu_num) {
         return vm->vcpus[vcpuid];
@@ -122,7 +123,7 @@ static inline struct vcpu* vm_get_vcpu(struct vm* vm, vcpuid_t vcpuid)
 
 static inline cpuid_t vm_translate_to_pcpuid(struct vm* vm, vcpuid_t vcpuid)
 {
-    struct vcpu* vcpu = vm_get_vcpu(vm, vcpuid);
+    struct vcpu_public* vcpu = vm_get_vcpu(vm, vcpuid);
 
     if (vcpu == NULL) {
         return INVALID_CPUID;
@@ -160,8 +161,6 @@ static inline void vcpu_inject_irq(struct vcpu* vcpu, irqid_t id)
 void vm_mem_prot_init(struct vm* vm, const struct vm_config* config);
 /* Called by every cpu of the vm after vm_mem_prot_init, before the vm's address space is used */
 void vm_mem_prot_cpu_init(struct vm* vm);
-/* The address at which the vm's other cpus reach this cpu's vcpu, embedded in its cpu structure */
-struct vcpu* vm_mem_prot_share_vcpu(struct vcpu* vcpu);
 
 /* ------------------------------------------------------------*/
 

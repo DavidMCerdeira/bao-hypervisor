@@ -29,16 +29,6 @@ struct cpuif {
 
 struct vcpu;
 
-/**
- * On MPU platforms the vcpu is mapped on its own by the other cpus of its vm, so it and what
- * follows it are aligned to the MPU granule
- */
-#ifdef MEM_PROT_MPU
-#define CPU_VCPU_ALIGN PAGE_SIZE
-#else
-#define CPU_VCPU_ALIGN _Alignof(struct vcpu)
-#endif
-
 struct cpu {
     cpuid_t id;
 
@@ -47,9 +37,9 @@ struct cpu {
     struct addr_space as;
 
     /* The vcpu this cpu runs (vcpu.vm is NULL while it has none) */
-    struct vcpu vcpu __attribute__((aligned(CPU_VCPU_ALIGN)));
+    struct vcpu vcpu;
 
-    struct cpu_arch arch __attribute__((aligned(CPU_VCPU_ALIGN)));
+    struct cpu_arch arch;
 
     struct cpuif* interface;
 

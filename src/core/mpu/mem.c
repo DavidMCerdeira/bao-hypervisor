@@ -12,6 +12,12 @@
 #include <objpool.h>
 #include <config.h>
 
+#define MEM_BROADCAST      (true)
+#define MEM_DONT_BROADCAST (false)
+
+#define MEM_LOCKED         (true)
+#define MEM_NOT_LOCKED     (false)
+
 struct shared_region {
     enum AS_TYPE as_type;
     asid_t asid;
@@ -143,7 +149,7 @@ static mpid_t mem_vmpu_get_entry_by_addr(struct addr_space* as, vaddr_t addr)
  * Whether a range lies in the hypervisor's own RAM: the whole image on unified-memory platforms,
  * only its data part where the code runs from flash (the two are not contiguous).
  */
-bool mem_in_hyp_image_ram(vaddr_t base, size_t size)
+static bool mem_in_hyp_image_ram(vaddr_t base, size_t size)
 {
     extern uint8_t _image_end;
 #ifdef MEM_NON_UNIFIED

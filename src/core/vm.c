@@ -43,16 +43,25 @@ static vcpuid_t vm_calc_vcpu_id(struct vm* vm)
     return vcpu_id;
 }
 
+/* The public part of every cpu's vcpu, in global memory (see struct vcpu_public) */
+static struct vcpu_public vcpus_public[PLAT_CPU_NUM];
+
 static void vm_vcpu_init(struct vm* vm, const struct vm_config* vm_config)
 {
     vcpuid_t vcpu_id = vm_calc_vcpu_id(vm);
     struct vcpu* vcpu = &cpu()->vcpu;
+    struct vcpu_public* pub = &vcpus_public[cpu()->id];
+
+    pub->id = vcpu_id;
+    pub->phys_id = cpu()->id;
+    pub->vm = vm;
+    vm->vcpus[vcpu_id] = pub;
 
     vcpu->id = vcpu_id;
     vcpu->phys_id = cpu()->id;
     vcpu->vm = vm;
     vcpu->active = true;
-    vm->vcpus[vcpu_id] = vm_mem_prot_share_vcpu(vcpu);
+    vcpu->pub = pub;
 
     vcpu_arch_init(vcpu, vm);
     vcpu_arch_reset(vcpu, vm_config->entry);
